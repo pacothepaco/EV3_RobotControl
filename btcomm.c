@@ -60,12 +60,12 @@ int BT_setEV3name(const char *name, int socket_id)
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // This function can be used to name your EV3. 
- // Inputs: A zero-terminated string containing the desired name, length <  24 characters
+ // Inputs: A zero-terminated string containing the desired name, length <=  12 characters
  //         The socket-ID for the lego block
  /////////////////////////////////////////////////////////////////////////////////////////////////////
 
  char cmd_string[1024];
- char cmd_prefix[11]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0xD4,     0x08,   0x84,              0x00};
+ unsigned char cmd_prefix[11]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0xD4,     0x08,   0x84,              0x00};
  //                   |length-2|    | cnt_id |    |type|   | header |    |ComSet|  |Op|    |String prefix|   
  char reply[1024];
  int len;
@@ -75,9 +75,9 @@ int BT_setEV3name(const char *name, int socket_id)
  memset(&cmd_string[0],0,1024);
  // Check input string fits within our buffer, then pre-format the command sequence 
  len=strlen(name);
- if (len>24)
+ if (len>12)
  {
-  fprintf(stderr,"BT_setEV3name(): The input name string is too long - 24 characters max, no white spaces or special characters\n");
+  fprintf(stderr,"BT_setEV3name(): The input name string is too long - 12 characters max, no white spaces or special characters\n");
   return(-1);
  }
  memcpy(&cmd_string[0],&cmd_prefix[0],10*sizeof(unsigned char));
@@ -149,14 +149,14 @@ int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
  int dur;
  int vol;
  void *p;
- char *cmd_str_p;
+ unsigned char *cmd_str_p;
  unsigned char *cp;
- char cmd_string[1024];
- char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
+ unsigned char cmd_string[1024];
+ unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
  //                  |length-2|    | cnt_id |    |type|   | header |    
 
  memset(&cmd_string[0],0,1024);
- strcpy(&cmd_string[0],&cmd_prefix[0]);
+ strcpy((char *)&cmd_string[0],(char *)&cmd_prefix[0]);
  len=5;
  
  // Set message count id
@@ -223,7 +223,7 @@ int BT_motor_port_start(char port_ids, char power, int socket_id)
 {
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // This function sends a command to the specify motor ports to set the motor power to
+ // This function sends a command to the specified motor ports to set the motor power to
  // the desired value.
  //
  // Motor ports are identified by hex values (defined at the top), but here we will use
@@ -248,7 +248,7 @@ int BT_motor_port_start(char port_ids, char power, int socket_id)
 
  void *p;
  unsigned char *cp;
- char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
  //                  |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
@@ -303,7 +303,7 @@ int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
  //////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
+ unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
  //                  |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
  
  if (port_ids>15)
@@ -341,3 +341,45 @@ int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
  return(1); 
 }
 
+
+int BT_all_stop(int brake_mode, int socket_id){
+ //////////////////////////////////////////////////////////////////////////////////////////////////////
+ // Applies breaks to all motors.
+ //
+ // Inputs: brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
+ //         socket_ID for the lego block
+ // Returns: 1 on success
+ //          0 otherwise
+ //
+ //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ void *p;
+ unsigned char *cp;
+ char port_ids = MOTOR_A|MOTOR_B|MOTOR_C|MOTOR_D;
+ unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
+ //                  |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+  
+ cmd_string[9]=port_ids;
+ cmd_string[10]=brake_mode;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_motor_port_stop command string:\n");
+ for(int i=0; i<11; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(socket_id,&cmd_string[0],11);
+
+ message_id_counter++;
+ return(1);
+
+}

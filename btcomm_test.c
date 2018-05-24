@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
  
  //just uncomment your bot's hex key to compile for your bot, and comment the other ones out.
  #ifndef HEXKEY
- 	#define HEXKEY "00:16:53:3F:71:F0"	// <--- SET UP YOUR NXT's HEX ID here
+ 	#define HEXKEY "00:16:53:56:55:D9"	// <--- SET UP YOUR EV3's HEX ID here
  #endif
 
  EV3_socket=BT_open(HEXKEY);
@@ -55,15 +55,18 @@ int main(int argc, char *argv[])
    fprintf(stderr,"%x ",reply[i]);
  fprintf(stderr,"\n");
 
- BT_setEV3name("Paco-Bot-Net",EV3_socket);
+ // name must not contain spaces or special characters
+ // max name length is 12 characters
+ BT_setEV3name("Ghost_Buster",EV3_socket);
 
  BT_play_tone_sequence(tone_data,EV3_socket);
 
- BT_motor_port_start(MOTOR_D,10,EV3_socket);
- BT_motor_port_start(MOTOR_C,-10,EV3_socket);
- gets(&reply[0]);
- BT_motor_port_stop(MOTOR_C|MOTOR_D,1,EV3_socket);
- 
+ BT_motor_port_start(MOTOR_D,20,EV3_socket);
+ BT_motor_port_start(MOTOR_C,-20,EV3_socket);
+ fgets(&reply[0], 1020, stdin);
+ //BT_motor_port_stop(MOTOR_C|MOTOR_D,1,EV3_socket);
+ BT_all_stop(0, EV3_socket); 
+
  BT_close(EV3_socket);
  fprintf(stderr,"Done!\n"); 
 }

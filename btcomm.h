@@ -77,5 +77,6 @@ int BT_play_tone_sequence(const int tone_data[50][3], int socket_id);
 int BT_motor_port_start(char port_ids, char power, int socket_id);
 int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id);
 int BT_all_stop(int brake_mode, int socket_id);
+int BT_drive(char lport, char rport, int power, int socket_id);
 
 #endif

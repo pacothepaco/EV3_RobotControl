@@ -59,13 +59,17 @@ int main(int argc, char *argv[])
  // max name length is 12 characters
  BT_setEV3name("Ghost_Buster",EV3_socket);
 
- BT_play_tone_sequence(tone_data,EV3_socket);
+ //BT_play_tone_sequence(tone_data,EV3_socket);
 
  BT_motor_port_start(MOTOR_D,20,EV3_socket);
  BT_motor_port_start(MOTOR_C,-20,EV3_socket);
  fgets(&reply[0], 1020, stdin);
  //BT_motor_port_stop(MOTOR_C|MOTOR_D,1,EV3_socket);
- BT_all_stop(0, EV3_socket); 
+ BT_all_stop(1, EV3_socket); 
+
+ BT_drive(MOTOR_C, MOTOR_D, -30, EV3_socket);
+ fgets(&reply[0], 1020, stdin);
+ BT_all_stop(1, EV3_socket);
 
  BT_close(EV3_socket);
  fprintf(stderr,"Done!\n"); 

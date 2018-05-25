@@ -384,7 +384,7 @@ int BT_all_stop(int brake_mode, int socket_id){
 
 }
 
-int BT_drive(char lport, char rport, int power, int socket_id){
+int BT_drive(char lport, char rport, char power, int socket_id){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This function sends a command to the left and right motor ports to set the motor power to
@@ -409,7 +409,7 @@ int BT_drive(char lport, char rport, int power, int socket_id){
  unsigned char *cp;
  char ports;
  unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
- //                  |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
+ //                           |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
  {
@@ -451,7 +451,7 @@ int BT_drive(char lport, char rport, int power, int socket_id){
 
 }
 
-int BT_turn(char lport, int lpower, char rport, int rpower, int socket_id){
+int BT_turn(char lport, char lpower, char rport, char rpower, int socket_id){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This function sends a command to the left and right motor ports to set the motor power to
@@ -474,8 +474,8 @@ int BT_turn(char lport, int lpower, char rport, int rpower, int socket_id){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
- //                  |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
+ unsigned char cmd_string[20]={0x12,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,      0x81,0x00,    0xA4,     0x00,     0x00, 0x81,0x00,  0xA6,    0x00,   0x00};
+ //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |lport id|  |power|  |set power| |layer| |rport id| |power|     |start|  |layer| |port ids|
 
  if (lpower>100||lpower<-100||rpower>100||lpower<-100)
  {
@@ -495,40 +495,28 @@ int BT_turn(char lport, int lpower, char rport, int rpower, int socket_id){
  cmd_string[2]=*cp;
  cmd_string[3]=*(cp+1);
 
+ //set up power and port for left motor
  cmd_string[9]=lport;
  cmd_string[11]=lpower;
- cmd_string[14]=lport;
+
+ //set up power and port for right motor
+ cmd_string[14] = rport;
+ cmd_string[16] = rpower;
+
+ cmd_string[19] = lport|rport;
 
 #ifdef __BT_debug
  fprintf(stderr,"BT_turn command string:\n");
- for(int i=0; i<16; i++)
+ for(int i=0; i<20; i++)
  {
   fprintf(stderr,"%X, ",cmd_string[i]&0xff);
  }
  fprintf(stderr,"\n");
 #endif
 
- write(socket_id,&cmd_string[0],15);
+ write(socket_id,&cmd_string[0],20);
 
  message_id_counter++;
-
- cmd_string[9]=rport;
- cmd_string[11]=rpower;
- cmd_string[14]=rport;
-
-#ifdef __BT_debug
- fprintf(stderr,"BT_turn command string:\n");
- for(int i=0; i<16; i++)
- {
-  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
-
- write(socket_id,&cmd_string[0],15);
-
- message_id_counter++;
-
 
  return(1);
 

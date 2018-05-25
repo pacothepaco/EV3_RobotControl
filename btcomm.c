@@ -369,7 +369,7 @@ int BT_all_stop(int brake_mode, int socket_id){
  cmd_string[10]=brake_mode;
 
 #ifdef __BT_debug
- fprintf(stderr,"BT_motor_port_stop command string:\n");
+ fprintf(stderr,"BT_all_stop command string:\n");
  for(int i=0; i<11; i++)
  {
   fprintf(stderr,"%X, ",cmd_string[i]&0xff);
@@ -397,9 +397,8 @@ int BT_drive(char lport, char rport, int power, int socket_id){
  // to fully stop the motors you need to use the appropriate BT command.
  //
  // Inputs: port identifier of left port
- //         power for left port in [-100, 100]
  //         port identifier of right port
- //         power for right port in [-100, 100]
+ //         power for ports in [-100, 100]
  //         the socket-ID for the Lego block
  //
  // Returns: 1 on success
@@ -437,7 +436,7 @@ int BT_drive(char lport, char rport, int power, int socket_id){
 
 
 #ifdef __BT_debug 
- fprintf(stderr,"BT_motor_port_start command string:\n");
+ fprintf(stderr,"BT_drive command string:\n");
  for(int i=0; i<16; i++)
  {
   fprintf(stderr,"%X, ",cmd_string[i]&0xff);
@@ -448,6 +447,89 @@ int BT_drive(char lport, char rport, int power, int socket_id){
  write(socket_id,&cmd_string[0],15);
 
  message_id_counter++; 
+ return(1);
+
+}
+
+int BT_turn(char lport, int lpower, char rport, int rpower, int socket_id){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // This function sends a command to the left and right motor ports to set the motor power to
+ // the desired value.
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Power must be in [-100, 100]
+ //
+ // Note that starting a motor at 0% power is *not the same* as stopping the motor.
+ // to fully stop the motors you need to use the appropriate BT command.
+ //
+ // Inputs: port identifier of left port
+ //         power for left port in [-100, 100]
+ //         port identifier of right port
+ //         power for right port in [-100, 100]
+ //         the socket-ID for the Lego block
+ //
+ // Returns: 1 on success
+ //          0 otherwise
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char *cp;
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ //                  |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
+
+ if (lpower>100||lpower<-100||rpower>100||lpower<-100)
+ {
+  fprintf(stderr,"BT_drive: Power must be in [-100, 100]\n");
+  return(0);
+ }
+
+ if (lport>8 || rport>8)
+ {
+  fprintf(stderr,"BT_drive: Invalid port id value\n");
+  return(0);
+ }
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[9]=lport;
+ cmd_string[11]=lpower;
+ cmd_string[14]=lport;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_turn command string:\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(socket_id,&cmd_string[0],15);
+
+ message_id_counter++;
+
+ cmd_string[9]=rport;
+ cmd_string[11]=rpower;
+ cmd_string[14]=rport;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_turn command string:\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(socket_id,&cmd_string[0],15);
+
+ message_id_counter++;
+
+
  return(1);
 
 }

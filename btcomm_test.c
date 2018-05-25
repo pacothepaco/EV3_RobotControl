@@ -71,6 +71,11 @@ int main(int argc, char *argv[])
  fgets(&reply[0], 1020, stdin);
  BT_all_stop(1, EV3_socket);
 
+ BT_turn(MOTOR_C, 40, MOTOR_D, -30, EV3_socket);
+ fgets(&reply[0], 1020, stdin);
+ BT_all_stop(1, EV3_socket);
+
+
  BT_close(EV3_socket);
  fprintf(stderr,"Done!\n"); 
 }

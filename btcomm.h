@@ -71,13 +71,13 @@ extern int message_id_counter;		// <-- Global message id counter
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int BT_open(const char *device_id);
-int BT_close(int socket_id);
-int BT_setEV3name(const char *name, int socket_id);
-int BT_play_tone_sequence(const int tone_data[50][3], int socket_id);
-int BT_motor_port_start(char port_ids, char power, int socket_id);
-int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id);
-int BT_all_stop(int brake_mode, int socket_id);
-int BT_drive(char lport, char rport, char power, int socket_id);
-int BT_turn(char lport, char lpower,  char rport, char rpower, int socket_id);
+int BT_close();
+int BT_setEV3name(const char *name);
+int BT_play_tone_sequence(const int tone_data[50][3]);
+int BT_motor_port_start(char port_ids, char power);
+int BT_motor_port_stop(char port_ids, int brake_mode);
+int BT_all_stop(int brake_mode);
+int BT_drive(char lport, char rport, char power);
+int BT_turn(char lport, char lpower,  char rport, char rpower);
 
 #endif

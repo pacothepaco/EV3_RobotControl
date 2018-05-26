@@ -10,6 +10,7 @@
  * ********************************************************************************************************************/
 #include "btcomm.h"
 int message_id_counter=1;
+int *socket_id;
 
 int BT_open(const char *device_id)
 {
@@ -24,39 +25,40 @@ int BT_open(const char *device_id)
   
  int rv;
  struct sockaddr_rc addr = { 0 };
- int s, status, socket_id;
+ int s, status;
  char dest[18];
-   
+ socket_id=(int*)malloc(sizeof(int));   
  fprintf(stderr,"Request to connect to device %s\n",device_id);
  
- socket_id = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+ *socket_id = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
  // set the connection parameters (who to connect to)
  addr.rc_family = AF_BLUETOOTH;
  addr.rc_channel = (uint8_t) 1;
  str2ba(device_id, &addr.rc_bdaddr );
 
- status = connect(socket_id, (struct sockaddr *)&addr, sizeof(addr));
+ status = connect(*socket_id, (struct sockaddr *)&addr, sizeof(addr));
  if( status == 0 ) {
-	printf("Connection to %s established.\n", device_id);
+	printf("Connection to %s established at socket: %d.\n", device_id, *socket_id);
  }
  if( status < 0 ) {
        perror("Connection attempt failed ");
        return(-1);
  }
- return(socket_id);
+ return 0;
 }
 
-int BT_close(int socket_id)
+int BT_close()
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // Close the communication socket to the EV3
  // Input: socket identifier obtained upon opening the connection.
  /////////////////////////////////////////////////////////////////////////////////////////////////////  
- fprintf(stderr,"Request to close connection to device at socket id %d\n",socket_id);
- close(socket_id);
+ fprintf(stderr,"Request to close connection to device at socket id %d\n",*socket_id);
+ close(*socket_id);
+ free(socket_id);
 }
 
-int BT_setEV3name(const char *name, int socket_id)
+int BT_setEV3name(const char *name)
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // This function can be used to name your EV3. 
@@ -105,8 +107,8 @@ int BT_setEV3name(const char *name, int socket_id)
  fprintf(stderr,"\n");
 #endif  
 
- write(socket_id,&cmd_string[0],len+2);
- read(socket_id,&reply[0],1023);
+ write(*socket_id,&cmd_string[0],len+2);
+ read(*socket_id,&reply[0],1023);
 
 #ifdef __BT_debug
  fprintf(stderr,"Set name reply:\n");
@@ -123,7 +125,7 @@ int BT_setEV3name(const char *name, int socket_id)
  message_id_counter++;
 }
 
-int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
+int BT_play_tone_sequence(const int tone_data[50][3])
 {
  //////////////////////////////////////////////////////////////////////////////////////////////////
  // 
@@ -213,13 +215,13 @@ int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
  fprintf(stderr,"\n");
 #endif  
 
- write(socket_id,&cmd_string[0],len+2);
+ write(*socket_id,&cmd_string[0],len+2);
 
  message_id_counter++; 
  return(1);
 }
 
-int BT_motor_port_start(char port_ids, char power, int socket_id)
+int BT_motor_port_start(char port_ids, char power)
 {
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
@@ -282,13 +284,13 @@ int BT_motor_port_start(char port_ids, char power, int socket_id)
  fprintf(stderr,"\n");
 #endif  
  
- write(socket_id,&cmd_string[0],15);
+ write(*socket_id,&cmd_string[0],15);
 
  message_id_counter++; 
  return(1); 
 }
 
-int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
+int BT_motor_port_stop(char port_ids, int brake_mode)
 {
  //////////////////////////////////////////////////////////////////////////////////
  //
@@ -335,14 +337,14 @@ int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
  fprintf(stderr,"\n");
 #endif  
  
- write(socket_id,&cmd_string[0],11);
+ write(*socket_id,&cmd_string[0],11);
 
  message_id_counter++; 
  return(1); 
 }
 
 
-int BT_all_stop(int brake_mode, int socket_id){
+int BT_all_stop(int brake_mode){
  //////////////////////////////////////////////////////////////////////////////////////////////////////
  // Applies breaks to all motors.
  //
@@ -377,14 +379,14 @@ int BT_all_stop(int brake_mode, int socket_id){
  fprintf(stderr,"\n");
 #endif
 
- write(socket_id,&cmd_string[0],11);
+ write(*socket_id,&cmd_string[0],11);
 
  message_id_counter++;
  return(1);
 
 }
 
-int BT_drive(char lport, char rport, char power, int socket_id){
+int BT_drive(char lport, char rport, char power){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This function sends a command to the left and right motor ports to set the motor power to
@@ -444,14 +446,14 @@ int BT_drive(char lport, char rport, char power, int socket_id){
  fprintf(stderr,"\n");
 #endif  
 
- write(socket_id,&cmd_string[0],15);
+ write(*socket_id,&cmd_string[0],15);
 
  message_id_counter++; 
  return(1);
 
 }
 
-int BT_turn(char lport, char lpower, char rport, char rpower, int socket_id){
+int BT_turn(char lport, char lpower, char rport, char rpower){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This function sends a command to the left and right motor ports to set the motor power to
@@ -514,7 +516,7 @@ int BT_turn(char lport, char lpower, char rport, char rpower, int socket_id){
  fprintf(stderr,"\n");
 #endif
 
- write(socket_id,&cmd_string[0],20);
+ write(*socket_id,&cmd_string[0],20);
 
  message_id_counter++;
 

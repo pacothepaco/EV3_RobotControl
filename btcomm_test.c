@@ -6,7 +6,6 @@
 
 int main(int argc, char *argv[])
 {
- int EV3_socket;
  char test_msg[8]={0x06,0x00,0x2A,0x00,0x00,0x00,0x00,0x01};
  char reply[1024];
  int tone_data[50][3];
@@ -39,17 +38,16 @@ int main(int argc, char *argv[])
  	#define HEXKEY "00:16:53:56:55:D9"	// <--- SET UP YOUR EV3's HEX ID here
  #endif
 
- EV3_socket=BT_open(HEXKEY);
- fprintf(stderr,"EV3 socket identifier: %d\n",EV3_socket);
+ BT_open(HEXKEY);
 
  fprintf(stderr,"Sending message:\n");
  for (int i=0; i<8; i++)
    fprintf(stderr,"%x ",test_msg[i]);
  fprintf(stderr,"\n");
 
- write(EV3_socket,&test_msg[0],8);
+ //write(&test_msg[0],8);
 
- read(EV3_socket,&reply[0],5);
+ //read(&reply[0],5);
  fprintf(stderr,"Reply message:\n");
  for (int i=0; i<5; i++)
    fprintf(stderr,"%x ",reply[i]);
@@ -57,25 +55,24 @@ int main(int argc, char *argv[])
 
  // name must not contain spaces or special characters
  // max name length is 12 characters
- BT_setEV3name("Ghost_Buster",EV3_socket);
+ BT_setEV3name("Legally_Pink");
 
- //BT_play_tone_sequence(tone_data,EV3_socket);
+ //BT_play_tone_sequence(tone_data);
 
- BT_motor_port_start(MOTOR_D,20,EV3_socket);
- BT_motor_port_start(MOTOR_C,-20,EV3_socket);
+ BT_motor_port_start(MOTOR_D,20);
+ BT_motor_port_start(MOTOR_C,-20);
  fgets(&reply[0], 1020, stdin);
- //BT_motor_port_stop(MOTOR_C|MOTOR_D,1,EV3_socket);
- BT_all_stop(1, EV3_socket); 
+ BT_all_stop(1); 
 
- BT_drive(MOTOR_C, MOTOR_D, -30, EV3_socket);
+ BT_drive(MOTOR_C, MOTOR_D, -30);
  fgets(&reply[0], 1020, stdin);
- BT_all_stop(1, EV3_socket);
+ BT_all_stop(1);
 
- BT_turn(MOTOR_C, 40, MOTOR_D, -30, EV3_socket);
+ BT_turn(MOTOR_C, 40, MOTOR_D, -30);
  fgets(&reply[0], 1020, stdin);
- BT_all_stop(1, EV3_socket);
+ BT_all_stop(1);
 
 
- BT_close(EV3_socket);
+ BT_close();
  fprintf(stderr,"Done!\n"); 
 }

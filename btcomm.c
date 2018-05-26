@@ -18,7 +18,8 @@ int BT_open(const char *device_id)
  // Open a socket to the specified Lego EV3 device specified by the provided hex ID string
  //
  // Input: The hex string identifier for the Lego EV3 block
- // Returns: An int identifier for an open socket to the device. Don't lose it!
+ // Returns: 0 on success
+ //          -1 otherwise 
  //
  // Derived from bluetooth.c by Don Neumann
  //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +52,6 @@ int BT_close()
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // Close the communication socket to the EV3
- // Input: socket identifier obtained upon opening the connection.
  /////////////////////////////////////////////////////////////////////////////////////////////////////  
  fprintf(stderr,"Request to close connection to device at socket id %d\n",*socket_id);
  close(*socket_id);
@@ -63,7 +63,6 @@ int BT_setEV3name(const char *name)
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // This function can be used to name your EV3. 
  // Inputs: A zero-terminated string containing the desired name, length <=  12 characters
- //         The socket-ID for the lego block
  /////////////////////////////////////////////////////////////////////////////////////////////////////
 
  char cmd_string[1024];
@@ -242,7 +241,6 @@ int BT_motor_port_start(char port_ids, char power)
  //
  // Inputs: The port identifiers
  //         Desired power value in [-100,100]
- //         The socket-ID for the Lego block
  //
  // Returns: 1 on success
  //          0 otherwise  
@@ -299,7 +297,6 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
  //
  // Inputs: Port ids of the motors that should be stopped
  // 	    brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
- //         socket_ID for the lego block
  // Returns: 1 on success
  //          0 otherwise
  //////////////////////////////////////////////////////////////////////////////////
@@ -349,7 +346,6 @@ int BT_all_stop(int brake_mode){
  // Applies breaks to all motors.
  //
  // Inputs: brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
- //         socket_ID for the lego block
  // Returns: 1 on success
  //          0 otherwise
  //
@@ -401,7 +397,6 @@ int BT_drive(char lport, char rport, char power){
  // Inputs: port identifier of left port
  //         port identifier of right port
  //         power for ports in [-100, 100]
- //         the socket-ID for the Lego block
  //
  // Returns: 1 on success
  //          0 otherwise
@@ -469,7 +464,6 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  //         power for left port in [-100, 100]
  //         port identifier of right port
  //         power for right port in [-100, 100]
- //         the socket-ID for the Lego block
  //
  // Returns: 1 on success
  //          0 otherwise

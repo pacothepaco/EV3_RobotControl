@@ -68,13 +68,44 @@ int main(int argc, char *argv[])
  //fgets(&reply[0], 1020, stdin);
  //BT_all_stop(1);
 
- BT_turn(MOTOR_C, 40, MOTOR_D, -30);
+ //BT_turn(MOTOR_C, 40, MOTOR_D, -30);
  fgets(&reply[0], 1020, stdin);
- BT_all_stop(1);
+ //BT_all_stop(1);
 
- int touch = BT_read_touch_sensor(PORT_1);
- fprintf(stderr, "Touch sensor value: %d\n", touch);
+ //int touch = BT_read_touch_sensor(PORT_1);
+ //fprintf(stderr, "Touch sensor value: %d\n", touch);
 
+ int RGB_array[3];
+ int color;
+ color=BT_read_colour_sensor(PORT_4);
+ fprintf(stderr, "Color: %d\n", color);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ fprintf(stderr, "Color: %d\n", color);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fgets(&reply[0], 1020, stdin);
  BT_close();
  fprintf(stderr,"Done!\n"); 
 }

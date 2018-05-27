@@ -517,3 +517,74 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  return(1);
 
 }
+
+int BT_read_touch_sensor(char sensor_port){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Reads the value from the touch sensor.
+ // 
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ //
+ // Inputs: port identifier of touch sensor port
+ //
+ // Returns: 1 if touch sensor is pushed 
+ //          0 if touch sensor is not pushed
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ char reply[1024];
+ unsigned char *cp;
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00 };
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+ //unsigned char cmd_string[12]={0x0A,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00};
+
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_touch_sensor: Invalid port id value\n");
+  return(0);
+ }
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_PCT);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(0x10);
+ cmd_string[13]=LC0(0x01); //data set
+ cmd_string[14]=GV0(0x00); //global var
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_touch_sensor command string:\n");
+ for(int i=0; i<15; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],15);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_touch_sensor(): Command successful\n");
+  for (int i=0; i<6; i++){
+     fprintf(stderr, "%X|", reply[i]&0xff);
+  }
+  fprintf(stderr, "\n");
+  return(reply[5]!=0);
+ }
+ else{
+  fprintf(stderr,"BT_touch_sensor(): Command failed\n");
+  return(-1);
+ }
+
+}

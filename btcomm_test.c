@@ -48,30 +48,32 @@ int main(int argc, char *argv[])
  //write(&test_msg[0],8);
 
  //read(&reply[0],5);
- fprintf(stderr,"Reply message:\n");
- for (int i=0; i<5; i++)
-   fprintf(stderr,"%x ",reply[i]);
- fprintf(stderr,"\n");
+ //fprintf(stderr,"Reply message:\n");
+ //for (int i=0; i<5; i++)
+ //  fprintf(stderr,"%x ",reply[i]);
+ //fprintf(stderr,"\n");
 
  // name must not contain spaces or special characters
  // max name length is 12 characters
- BT_setEV3name("Legally_Pink");
+ //BT_setEV3name("Legally_Pink");
 
  //BT_play_tone_sequence(tone_data);
 
- BT_motor_port_start(MOTOR_D,20);
- BT_motor_port_start(MOTOR_C,-20);
- fgets(&reply[0], 1020, stdin);
- BT_all_stop(1); 
+ //BT_motor_port_start(MOTOR_D,20);
+ //BT_motor_port_start(MOTOR_C,-20);
+ //fgets(&reply[0], 1020, stdin);
+ //BT_all_stop(1); 
 
- BT_drive(MOTOR_C, MOTOR_D, -30);
- fgets(&reply[0], 1020, stdin);
- BT_all_stop(1);
+ //BT_drive(MOTOR_C, MOTOR_D, -30);
+ //fgets(&reply[0], 1020, stdin);
+ //BT_all_stop(1);
 
  BT_turn(MOTOR_C, 40, MOTOR_D, -30);
  fgets(&reply[0], 1020, stdin);
  BT_all_stop(1);
 
+ int touch = BT_read_touch_sensor(PORT_1);
+ fprintf(stderr, "Touch sensor value: %d\n", touch);
 
  BT_close();
  fprintf(stderr,"Done!\n"); 

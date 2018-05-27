@@ -32,6 +32,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/rfcomm.h>
+#include "bytecodes.h"
 
 extern int message_id_counter;		// <-- Global message id counter
 #define __BT_debug			// Uncomment to trigger printing of BT debug messages
@@ -84,5 +85,6 @@ int BT_motor_port_stop(char port_ids, int brake_mode);
 int BT_all_stop(int brake_mode);
 int BT_drive(char lport, char rport, char power);
 int BT_turn(char lport, char lpower,  char rport, char rpower);
+int BT_read_touch_sensor(char sensor_port);
 
 #endif

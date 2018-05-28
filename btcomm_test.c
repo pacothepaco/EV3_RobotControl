@@ -80,31 +80,38 @@ int main(int argc, char *argv[])
  color=BT_read_colour_sensor(PORT_4);
  fprintf(stderr, "Color: %d\n", color);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);
 
  color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+
  fgets(&reply[0], 1020, stdin);
 
  color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);
 
  color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);
 
  color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);
 
  color=BT_read_colour_sensor(PORT_4);
  fprintf(stderr, "Color: %d\n", color);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);
  BT_close();
  fprintf(stderr,"Done!\n"); 

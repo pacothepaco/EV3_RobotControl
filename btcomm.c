@@ -660,7 +660,8 @@ int BT_read_colour_sensor(char sensor_port){
 int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Reads the value from the colour sensor and fills in the passed in RGB array with RGB values.
+ // Reads the value from the colour sensor and fills in the passed in RGB array with RGB values,
+ // where R[0, 255], G[0, 255] and B[0, 255].
  //
  //
  // Ports are identified as PORT_1, PORT_2, etc
@@ -669,13 +670,14 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  // Inputs: port identifier of colour sensor port
  //
  // Returns:
- //
  //          -1 if EV3 returned an error response
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
- char reply[1024];
+ unsigned char reply[1024];
  unsigned char *cp;
- unsigned char cmd_string[17]={0x0F,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00, 0x00 };
+ uint32_t R=0, G=0, B=0;
+
+ unsigned char cmd_string[17]={0x00,0x00, 0x00,0x00, 0x00,  0x0C,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00, 0x00 };
  //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
  //unsigned char cmd_string[12]={0x0A,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00};
 
@@ -686,6 +688,7 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
   return(0);
  }
 
+ cmd_string[0]=LC0(15);
  // Set message count id
  p=(void *)&message_id_counter;
  cp=(unsigned char *)p;
@@ -693,14 +696,14 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  cmd_string[3]=*(cp+1);
 
  cmd_string[7]=opINPUT_DEVICE;
- cmd_string[8]=LC0(READY_PCT);
+ cmd_string[8]=LC0(READY_RAW);
  cmd_string[10]=sensor_port;
  cmd_string[11]=LC0(29); //type
  cmd_string[12]=LC0(0x04); //mode
  cmd_string[13]=LC0(3); //data set
  cmd_string[14]=GV0(0x00); //global var
- cmd_string[15]=GV0(0x01);
- cmd_string[16]=GV0(0x02);
+ cmd_string[15]=GV0(0x04);
+ cmd_string[16]=GV0(0x08);
 
 #ifdef __BT_debug
  fprintf(stderr,"BT_read_colour_sensor_RGB command string:\n");
@@ -718,11 +721,18 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
 
  if (reply[4]==0x02){
   fprintf(stderr,"BT_colour_sensor_RGB(): Command successful\n");
-  for (int i=0; i<8; i++){
-     fprintf(stderr, "%X|", reply[i]&0xff);
-  }
-  fprintf(stderr, "\n");
-  return(reply[5]!=0);
+  R|=(uint32_t)reply[5];
+  R|=(uint32_t)reply[6]<<8;
+  G|=(uint32_t)reply[9];
+  G|=(uint32_t)reply[10]<<8;
+  B|=(uint32_t)reply[13];
+  B|=(uint32_t)reply[14]<<8;
+  float normalized=(float)R/1020*255;
+  RGB[0]=(int)normalized;
+  normalized=(float)G/1020*255;
+  RGB[1]=(int)normalized;
+  normalized=(float)B/1020*255;
+  RGB[2]=(int)normalized;
  }
  else{
   fprintf(stderr,"BT_colour_sensor_RGB(): Command failed\n");

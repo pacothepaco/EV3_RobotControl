@@ -88,5 +88,5 @@ int BT_turn(char lport, char lpower,  char rport, char rpower);
 int BT_read_touch_sensor(char sensor_port);
 int BT_read_colour_sensor(char sensor_port);
 int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]); 
-
+int BT_read_ultrasonic_sensor(char sensor_port);
 #endif

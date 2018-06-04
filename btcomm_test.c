@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
  //int touch = BT_read_touch_sensor(PORT_1);
  //fprintf(stderr, "Touch sensor value: %d\n", touch);
 
- int RGB_array[3];
+ /*int RGB_array[3];
  int color;
  color=BT_read_colour_sensor(PORT_4);
  fprintf(stderr, "Color: %d\n", color);
@@ -112,7 +112,10 @@ int main(int argc, char *argv[])
  fprintf(stderr, "Color: %d\n", color);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
- fgets(&reply[0], 1020, stdin);
+ fgets(&reply[0], 1020, stdin);*/
+
+ int distance=BT_read_ultrasonic_sensor(PORT_3);
+ fprintf(stderr, "distance: %d\n", distance);
  BT_close();
  fprintf(stderr,"Done!\n"); 
 }

@@ -611,8 +611,6 @@ int BT_read_colour_sensor(char sensor_port){
  unsigned char *cp;
  unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00 };
  //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
- //unsigned char cmd_string[12]={0x0A,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00};
-
 
  if (sensor_port>8)
  {
@@ -743,13 +741,13 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
 int BT_read_ultrasonic_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Reads the value from ultrasonic sensor and returns distance in cm to object in front of sensor. 
+ // Reads the value from ultrasonic sensor and returns distance in mm to object in front of sensor. 
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //
  // Inputs: port identifier of ultrasonic sensor port
  //
- // Returns: distance in cm
+ // Returns: distance in mm
  //          -1 if EV3 returned an error response
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
@@ -802,3 +800,95 @@ if (reply[4]==0x02){
  }
  return (reply[5]);
 }
+
+int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Clears the sensor data of the gyro sensor and then reads the values for angle and speed of angle
+ // change and fills in the provided array.
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ // Inputs: port identifier of ultrasonic sensor port
+ //
+ // Returns: 0 on success
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char reply[1024];
+ unsigned char *cp;
+
+ unsigned char clr_string[10]={0x08,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00};
+
+ unsigned char cmd_string[16]={0x00,0x00, 0x00,0x00, 0x00,  0x02,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_gyro_sensor: Invalid port id value\n");
+  return(0);
+ }
+
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ clr_string[2]=*cp;
+ clr_string[3]=*(cp+1);
+ clr_string[7]=opINPUT_DEVICE;
+ clr_string[8]=LC0(CLR_ALL);
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_gyro_sensor clear command string\n");
+ for(int i=0; i<10; i++)
+ {
+  fprintf(stderr,"%X, ",clr_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ message_id_counter++;
+
+ write(*socket_id,&clr_string[0],10);
+
+
+ cmd_string[0]=LC0(14);
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_RAW);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(32); //type
+ cmd_string[12]=LC0(3);//mode
+ cmd_string[13]=LC0(0x02); //data set
+ cmd_string[14]=GV0(0x00); //global var
+ cmd_string[15]=GV0(0x02);
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_gyro_sensor command string\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],16);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_read_gyro_sensor(): Command successful\n");
+  fprintf(stderr, "angle: %d, speed: %d\n", reply[5], reply[6]);
+ }
+ else{
+  fprintf(stderr,"BT_read_gyro_sensor: Command failed\n");
+  return(-1);
+ }
+ return (0);
+}
+

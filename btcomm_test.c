@@ -59,10 +59,15 @@ int main(int argc, char *argv[])
 
  //BT_play_tone_sequence(tone_data);
 
- //BT_motor_port_start(MOTOR_D,20);
- //BT_motor_port_start(MOTOR_C,-20);
- //fgets(&reply[0], 1020, stdin);
- //BT_all_stop(1); 
+ int readings[2];
+ BT_read_gyro_sensor(PORT_2, readings);
+
+ BT_motor_port_start(MOTOR_D,20);
+ BT_motor_port_start(MOTOR_C,-20);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+
+ BT_all_stop(1); 
 
  //BT_drive(MOTOR_C, MOTOR_D, -30);
  //fgets(&reply[0], 1020, stdin);
@@ -114,8 +119,16 @@ int main(int argc, char *argv[])
  fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);*/
 
- int distance=BT_read_ultrasonic_sensor(PORT_3);
+ /*int distance=BT_read_ultrasonic_sensor(PORT_3);
  fprintf(stderr, "distance: %d\n", distance);
+ fgets(&reply[0], 1020, stdin);*/
+
+ int gyro_readings[2];
+ BT_read_gyro_sensor(PORT_2, gyro_readings);
+ 
+
  BT_close();
  fprintf(stderr,"Done!\n"); 
+
+ 
 }

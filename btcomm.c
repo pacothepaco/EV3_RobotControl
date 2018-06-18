@@ -887,7 +887,7 @@ int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
  //          -1 if EV3 returned an error response
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
- unsigned char reply[1024];
+ char reply[1024];
  memset(&reply[0],0,1024);
  unsigned char *cp;
 

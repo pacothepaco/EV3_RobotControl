@@ -155,7 +155,7 @@ int BT_play_tone_sequence(const int tone_data[50][3])
  unsigned char *cp;
  unsigned char cmd_string[1024];
  unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
- //                  |length-2|    | cnt_id |    |type|   | header |    
+ //                           |length-2|    | cnt_id |    |type|   | header |    
 
  memset(&cmd_string[0],0,1024);
  strcpy((char *)&cmd_string[0],(char *)&cmd_prefix[0]);
@@ -826,8 +826,8 @@ int BT_clear_gyro_sensor(char sensor_port){
  // Returns: 0 on success
  //          -1 if EV3 returned an error response
  //////////////////////////////////////////////////////////////////////////////////////////////////
- unsigned char clr_string[11]={0x08,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00};
- //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port|
+ unsigned char clr_string[10]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|
 
  void *p;
  unsigned char *cp;
@@ -842,10 +842,11 @@ int BT_clear_gyro_sensor(char sensor_port){
 
  p=(void *)&message_id_counter;
  cp=(unsigned char *)p;
+ clr_string[0]=LC0(8);
  clr_string[2]=*cp;
  clr_string[3]=*(cp+1);
  clr_string[7]=opINPUT_DEVICE;
- clr_string[8]=LC0(CLR_CHANGES);
+ clr_string[8]=LC0(CLR_ALL);
  clr_string[10]=sensor_port;
 
 #ifdef __BT_debug
@@ -857,16 +858,18 @@ int BT_clear_gyro_sensor(char sensor_port){
  fprintf(stderr,"\n");
 #endif
 
- write(*socket_id,&clr_string[0],11);
-// read(*socket_id,&reply[0],1023);
+ write(*socket_id,&clr_string[0],10);
+ read(*socket_id,&reply[0],1023);
 
  message_id_counter++;
 
-/* if (reply[4]==0x02){
+ if (reply[4]==0x02){
   fprintf(stderr,"BT_clear_gyro_sensor(): Command successful\n");
  }
- fprintf(stderr,"\n");
-*/
+ else{
+  fprintf(stderr,"BT_clear_gyro_sensor: Command failed\n");
+  return(-1);
+ }
  return 0;
 }
 

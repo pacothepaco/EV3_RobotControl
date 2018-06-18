@@ -142,7 +142,6 @@ int main(int argc, char *argv[])
 
  fgets(&reply[0], 1020, stdin);
 
-
  BT_motor_port_start(MOTOR_D,30);
  BT_motor_port_start(MOTOR_C,-30);
  fgets(&reply[0], 1020, stdin);
@@ -158,9 +157,6 @@ int main(int argc, char *argv[])
  BT_all_stop(0);
  fgets(&reply[0], 1020, stdin);
 
-
  BT_close();
  fprintf(stderr,"Done!\n"); 
-
- 
 }

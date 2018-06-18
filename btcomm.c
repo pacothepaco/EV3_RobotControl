@@ -69,6 +69,7 @@ int BT_setEV3name(const char *name)
  unsigned char cmd_prefix[11]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0xD4,     0x08,   0x84,              0x00};
  //                   |length-2|    | cnt_id |    |type|   | header |    |ComSet|  |Op|    |String prefix|   
  char reply[1024];
+ memset(&reply[0],0,1024);
  int len;
  void *lp;
  unsigned char *cp;
@@ -608,6 +609,7 @@ int BT_read_colour_sensor(char sensor_port){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  char reply[1024];
+ memset(&reply[0],0,1024);
  unsigned char *cp;
  unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00 };
  //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
@@ -672,6 +674,7 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char reply[1024];
+ memset(&reply[0],0,1024); 
  unsigned char *cp;
  uint32_t R=0, G=0, B=0;
 
@@ -718,6 +721,15 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
 
  if (reply[4]==0x02){
   fprintf(stderr,"BT_colour_sensor_RGB(): Command successful\n");
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_colour_sensor_RGB response string:\n");
+ for(int i=0; i<17; i++)
+ {
+  fprintf(stderr,"%X, ",reply[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
   R|=(uint32_t)reply[5];
   R|=(uint32_t)reply[6]<<8;
   G|=(uint32_t)reply[9];
@@ -752,6 +764,7 @@ int BT_read_ultrasonic_sensor(char sensor_port){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char reply[1024];
+ memset(&reply[0],0,1024);
  unsigned char *cp;
 
  unsigned char cmd_string[15]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00};
@@ -801,28 +814,25 @@ if (reply[4]==0x02){
  return (reply[5]);
 }
 
-int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
+int BT_clear_gyro_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Clears the sensor data of the gyro sensor and then reads the values for angle and speed of angle
- // change and fills in the provided array.
+ // Clears the sensor data of the gyro sensor. 
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //
- // Inputs: port identifier of ultrasonic sensor port
+ // Inputs: port identifier of gyro sensor port
  //
  // Returns: 0 on success
  //          -1 if EV3 returned an error response
  //////////////////////////////////////////////////////////////////////////////////////////////////
+ unsigned char clr_string[11]={0x08,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port|
+
  void *p;
- unsigned char reply[1024];
  unsigned char *cp;
-
- unsigned char clr_string[10]={0x08,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00};
-
- unsigned char cmd_string[16]={0x00,0x00, 0x00,0x00, 0x00,  0x02,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00};
- //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
-
+ char reply[1024];
+ memset(&reply[0],0,1024);
 
  if (sensor_port>8)
  {
@@ -835,21 +845,58 @@ int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
  clr_string[2]=*cp;
  clr_string[3]=*(cp+1);
  clr_string[7]=opINPUT_DEVICE;
- clr_string[8]=LC0(CLR_ALL);
+ clr_string[8]=LC0(CLR_CHANGES);
+ clr_string[10]=sensor_port;
 
 #ifdef __BT_debug
- fprintf(stderr,"BT_read_gyro_sensor clear command string\n");
- for(int i=0; i<10; i++)
+ fprintf(stderr,"BT_clear_gyro_sensor command string\n");
+ for(int i=0; i<11; i++)
  {
   fprintf(stderr,"%X, ",clr_string[i]&0xff);
  }
  fprintf(stderr,"\n");
 #endif
 
+ write(*socket_id,&clr_string[0],11);
+// read(*socket_id,&reply[0],1023);
+
  message_id_counter++;
 
- write(*socket_id,&clr_string[0],10);
+/* if (reply[4]==0x02){
+  fprintf(stderr,"BT_clear_gyro_sensor(): Command successful\n");
+ }
+ fprintf(stderr,"\n");
+*/
+ return 0;
+}
 
+int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Clears the sensor data of the gyro sensor and then reads the values for angle and speed of angle
+ // change and fills in the provided array.
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ // Inputs: port identifier of gyro sensor port
+ //
+ // Returns: 0 on success
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char reply[1024];
+ memset(&reply[0],0,1024);
+ unsigned char *cp;
+
+ unsigned char cmd_string[16]={0x00,0x00, 0x00,0x00, 0x00,  0x02,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_gyro_sensor: Invalid port id value\n");
+  return(0);
+ }
 
  cmd_string[0]=LC0(14);
  // Set message count id
@@ -884,11 +931,21 @@ int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
  if (reply[4]==0x02){
   fprintf(stderr,"BT_read_gyro_sensor(): Command successful\n");
   fprintf(stderr, "angle: %d, speed: %d\n", reply[5], reply[6]);
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_gyro_sensor response string:\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",reply[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
  }
  else{
   fprintf(stderr,"BT_read_gyro_sensor: Command failed\n");
   return(-1);
  }
+
  return (0);
 }
 

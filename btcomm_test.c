@@ -60,14 +60,16 @@ int main(int argc, char *argv[])
  //BT_play_tone_sequence(tone_data);
 
  int readings[2];
+ BT_clear_gyro_sensor(PORT_2);
  BT_read_gyro_sensor(PORT_2, readings);
-
- BT_motor_port_start(MOTOR_D,20);
- BT_motor_port_start(MOTOR_C,-20);
  fgets(&reply[0], 1020, stdin);
- BT_read_gyro_sensor(PORT_2, readings);
+
+ BT_motor_port_start(MOTOR_D,30);
+ BT_motor_port_start(MOTOR_C,-30);
+ fgets(&reply[0], 1020, stdin);
 
  BT_all_stop(1); 
+ BT_read_gyro_sensor(PORT_2, readings);
 
  //BT_drive(MOTOR_C, MOTOR_D, -30);
  //fgets(&reply[0], 1020, stdin);
@@ -80,14 +82,14 @@ int main(int argc, char *argv[])
  //int touch = BT_read_touch_sensor(PORT_1);
  //fprintf(stderr, "Touch sensor value: %d\n", touch);
 
- /*int RGB_array[3];
- int color;
+ int RGB_array[3];
+ int color=0;
  color=BT_read_colour_sensor(PORT_4);
  fprintf(stderr, "Color: %d\n", color);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);
-
+/*
  color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "Color: %d\n", color);
@@ -125,7 +127,37 @@ int main(int argc, char *argv[])
 
  int gyro_readings[2];
  BT_read_gyro_sensor(PORT_2, gyro_readings);
- 
+
+ BT_motor_port_start(MOTOR_D,-30);
+ BT_motor_port_start(MOTOR_C,30);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+ BT_all_stop(1);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+
+ fgets(&reply[0], 1020, stdin);
+
+
+ BT_motor_port_start(MOTOR_D,30);
+ BT_motor_port_start(MOTOR_C,-30);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+
+ BT_all_stop(1);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_motor_port_start(MOTOR_D,30);
+ BT_motor_port_start(MOTOR_C,-30);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+ BT_all_stop(0);
+ fgets(&reply[0], 1020, stdin);
+
 
  BT_close();
  fprintf(stderr,"Done!\n"); 

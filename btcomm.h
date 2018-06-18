@@ -89,5 +89,6 @@ int BT_read_touch_sensor(char sensor_port);
 int BT_read_colour_sensor(char sensor_port);
 int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]); 
 int BT_read_ultrasonic_sensor(char sensor_port);
+int BT_clear_gyro_sensor(char sensor_port);
 int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]);
 #endif

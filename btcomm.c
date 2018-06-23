@@ -250,7 +250,7 @@ int BT_motor_port_start(char port_ids, char power)
  void *p;
  unsigned char *cp;
  unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
- //                  |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
+ //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
  {
@@ -518,6 +518,100 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  return(1);
 
 }
+
+int BT_timed_motor_port_start(char port_id, char power, int time){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // This function sends a command to the 
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Power must be in [-100, 100]
+ //
+ // Note that starting a motor at 0% power is *not the same* as stopping the motor.
+ // to fully stop the motors you need to use the appropriate BT command.
+ //
+ // Inputs: port identifier
+ //         power for port in [-100, 100]
+ //         time in ms
+ //
+ // Returns: 1 on success
+ //          0 otherwise
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char *cp;
+ unsigned char timer_wait_cmd[10] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00,   0x00};
+ //                                 |length-2| | cnt_id | |type| | header |  |cmd| |time| |variable|
+
+ unsigned char timer_ready_cmd[9] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00};
+ //                                 |length-2| | cnt_id | |type| | header |  |cmd|  |variable|
+
+
+ if (power>100||power<-100)
+ {
+  fprintf(stderr,"BT_timed_motor_port_start: Power must be in [-100, 100]\n");
+  return(0);
+ }
+
+ if (port_id>8)
+ {
+  fprintf(stderr,"BT_timed_motor_port_start: Invalid port id value\n");
+  return(0);
+ }
+
+ BT_motor_port_start(port_id, power);
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ timer_wait_cmd[2]=*cp;
+ timer_wait_cmd[3]=*(cp+1);
+
+ timer_wait_cmd[0]=LC0(8);
+ timer_wait_cmd[7]=opTIMER_WAIT;
+ timer_wait_cmd[8]=time;
+ timer_wait_cmd[9]=LV4(0);
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_timed_motor_port_start timer wait command:\n");
+ for(int i=0; i<10; i++)
+ {
+  fprintf(stderr,"%X, ",timer_wait_cmd[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&timer_wait_cmd[0],10);
+
+ message_id_counter++;
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ timer_ready_cmd[2]=*cp;
+ timer_ready_cmd[3]=*(cp+1);
+
+ timer_ready_cmd[0]=LC0(7);
+ timer_ready_cmd[7]=opTIMER_READY;
+ timer_ready_cmd[8]=LV4(0);
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_timed_motor_port_start timer ready command:\n");
+ for(int i=0; i<9; i++)
+ {
+  fprintf(stderr,"%X, ",timer_ready_cmd[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&timer_ready_cmd[0],9);
+
+ message_id_counter++;
+
+ //BT_motor_port_start(port_id, power);
+
+ return(1);
+}
+
 
 int BT_read_touch_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -836,7 +930,7 @@ int BT_clear_gyro_sensor(char sensor_port){
 
  if (sensor_port>8)
  {
-  fprintf(stderr,"BT_read_gyro_sensor: Invalid port id value\n");
+  fprintf(stderr,"BT_clear_gyro_sensor: Invalid port id value\n");
   return(0);
  }
 

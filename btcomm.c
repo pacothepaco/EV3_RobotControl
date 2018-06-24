@@ -519,7 +519,7 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
 
 }
 
-int BT_timed_motor_port_start(char port_id, char power, int time){
+int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int run_time, int ramp_down_time){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This function sends a command to the 
@@ -539,12 +539,8 @@ int BT_timed_motor_port_start(char port_id, char power, int time){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- unsigned char timer_wait_cmd[10] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00,   0x00};
- //                                 |length-2| | cnt_id | |type| | header |  |cmd| |time| |variable|
-
- unsigned char timer_ready_cmd[9] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00};
- //                                 |length-2| | cnt_id | |type| | header |  |cmd|  |variable|
-
+ unsigned char cmd_string[22]={0x00,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0x00,  0x00,   0x00,     0x81,0x00, 0x00,0x00,0x00, 0x00,0x00,0x00,  0x00,0x00,0x00,     0x00};
+ //                          |length-2| | cnt_id | |type|   |header|    |cmd| |layer| |port ids|  |power|      |ramp up|      |run|           |ramp down|      |brake|
 
  if (power>100||power<-100)
  {
@@ -558,56 +554,39 @@ int BT_timed_motor_port_start(char port_id, char power, int time){
   return(0);
  }
 
- BT_motor_port_start(port_id, power);
-
  // Set message count id
  p=(void *)&message_id_counter;
  cp=(unsigned char *)p;
- timer_wait_cmd[2]=*cp;
- timer_wait_cmd[3]=*(cp+1);
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
 
- timer_wait_cmd[0]=LC0(8);
- timer_wait_cmd[7]=opTIMER_WAIT;
- timer_wait_cmd[8]=time;
- timer_wait_cmd[9]=LV4(0);
+ cmd_string[0]=LC0(20);
+ cmd_string[7]=opOUTPUT_TIME_POWER;
+ cmd_string[9]=port_id;
+ cmd_string[11]=power;
+ cmd_string[12]=LC2_byte1(); //ramp up
+ cmd_string[13]=LC2_byte2(ramp_up_time);
+ cmd_string[14]=LC2_byte3(ramp_up_time);
+ cmd_string[15]=LC2_byte1(); //run
+ cmd_string[16]=LC2_byte2(run_time);
+ cmd_string[17]=LC2_byte3(run_time);
+ cmd_string[18]=LC2_byte1(); //ramp down
+ cmd_string[19]=LC2_byte2(ramp_down_time);
+ cmd_string[20]=LC2_byte3(ramp_down_time);
+ cmd_string[21]=0;
 
 #ifdef __BT_debug
- fprintf(stderr,"BT_timed_motor_port_start timer wait command:\n");
- for(int i=0; i<10; i++)
+ fprintf(stderr,"BT_motor_port_start command string:\n");
+ for(int i=0; i<22; i++)
  {
-  fprintf(stderr,"%X, ",timer_wait_cmd[i]&0xff);
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
  }
  fprintf(stderr,"\n");
 #endif
 
- write(*socket_id,&timer_wait_cmd[0],10);
+ write(*socket_id,&cmd_string[0],22);
 
  message_id_counter++;
-
- // Set message count id
- p=(void *)&message_id_counter;
- cp=(unsigned char *)p;
- timer_ready_cmd[2]=*cp;
- timer_ready_cmd[3]=*(cp+1);
-
- timer_ready_cmd[0]=LC0(7);
- timer_ready_cmd[7]=opTIMER_READY;
- timer_ready_cmd[8]=LV4(0);
-
-#ifdef __BT_debug
- fprintf(stderr,"BT_timed_motor_port_start timer ready command:\n");
- for(int i=0; i<9; i++)
- {
-  fprintf(stderr,"%X, ",timer_ready_cmd[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
-
- write(*socket_id,&timer_ready_cmd[0],9);
-
- message_id_counter++;
-
- //BT_motor_port_start(port_id, power);
 
  return(1);
 }

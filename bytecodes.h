@@ -1614,6 +1614,9 @@ DEVCMD;
 #define   LC0(v)                        ((v & PRIMPAR_VALUE) | PRIMPAR_SHORT | PRIMPAR_CONST)
 #define   LC1(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE),(v & 0xFF)
 #define   LC2(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES),(v & 0xFF),((v >> 8) & 0xFF)
+#define   LC2_byte1()                   (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES)
+#define   LC2_byte2(v)                  (v & 0xFF)
+#define   LC2_byte3(v)                  ((v >> 8) & 0xFF)
 #define   LC4(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_4_BYTES),((ULONG)v & 0xFF),(((ULONG)v >> (ULONG)8) & 0xFF),(((ULONG)v >> (ULONG)16) & 0xFF),(((ULONG)v >> (ULONG)24) & 0xFF)
 #define   LCA(h)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE | PRIMPAR_ARRAY),(i & 0xFF)
 

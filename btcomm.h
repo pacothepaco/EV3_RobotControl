@@ -91,6 +91,6 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]);
 int BT_read_ultrasonic_sensor(char sensor_port);
 int BT_clear_gyro_sensor(char sensor_port);
 int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]);
-int BT_timed_motor_port_start(char port_id, char power, int time);
+int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int run_time, int ramp_down_time);
 
 #endif

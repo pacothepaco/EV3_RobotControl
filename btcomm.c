@@ -611,16 +611,18 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- unsigned char cmd[]= {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00, 0xA4,    0x00,    0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00,  0x00,  0x00,0x00,0x00,0x00, 0x00,0x00, 0x00,   0x00,0x00, 0x00, 0x00, 0x00, 0x00 };
- //                  |length-2| | cnt_id | |type| | header | |set_pwr| |layer| |port| |brake| |power|  |start| |layer| |port|  |wait|    |time|         |variable| |ready| |variable| |stop| |layer| |port_id| |break|
+ char reply[1024];
 
- unsigned char timer_wait_cmd[14] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00,0x00,0x00,0x00, 0x00, 0x00};
+// unsigned char cmd[29]= {0x00,0x00, 0x00,0x00, 0x00, 0x00,0x00,  0xA4,   0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00,  0x00,  0x00,0x00,0x00,0x00, 0x00,0x00, 0x00,   0x00,0x00, 0xA3, 0x00,   0x00,   0x00};
+ //                     |length-2| |cnt_id|   |type| |header| |set_pwr| |layer| |port| |power|  |start| |layer| |port|  |wait|    |time|         |variable| |ready| |variable| |stop| |layer| |port_id| |break|
+
+ //unsigned char timer_wait_cmd[14] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00,0x00,0x00,0x00, 0x00, 0x00};
  //                                 |length-2| | cnt_id | |type| | header |  |cmd| |time|                |variable|
 
- unsigned char timer_ready_cmd[10] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00, 0x00};
+ //unsigned char timer_ready_cmd[10] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00, 0x00};
  //                                 |length-2| | cnt_id | |type| | header |  |cmd|  |variable| 
 
-
+ unsigned char cmd[26]= {0x00,0x00, 0x00,0x00, 0x00, 0x00,0x00,  0xA4,   0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0xA3, 0x00, 0x00, 0x00};
  if (power>100||power<-100)
  {
   fprintf(stderr,"BT_timed_motor_port_start: Power must be in [-100, 100]\n");
@@ -633,63 +635,53 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
   return(0);
  }
 
- BT_motor_port_start(port_id, power);
+ //BT_motor_port_start(port_id, power);
 
  // Set message count id
  p=(void *)&message_id_counter;
  cp=(unsigned char *)p;
- timer_wait_cmd[2]=*cp;
- timer_wait_cmd[3]=*(cp+1);
+ cmd[2]=*cp;
+ cmd[3]=*(cp+1);
 
- timer_wait_cmd[0]=LC0(12);
- timer_wait_cmd[6]=LC0(1<<4); //size of local memory
- timer_wait_cmd[7]=opTIMER_WAIT;
- timer_wait_cmd[8]=LX_byte2(time);
- timer_wait_cmd[9]=LX_byte3(time);
- timer_wait_cmd[10]=LX_byte4(time);
- timer_wait_cmd[11]=LX_byte5(time);
- timer_wait_cmd[12]=LV1(0);
+ cmd[0]=LC0(24);
+ cmd[6]=LC0(10<<2); //size of local memory
+ cmd[9]=port_id;
+ cmd[11]=power;
+ cmd[14]=port_id;
 
-#ifdef __BT_debug
- fprintf(stderr,"BT_timed_motor_port_start timer wait command:\n");
- for(int i=0; i<14; i++)
- {
-  fprintf(stderr,"%X, ",timer_wait_cmd[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
+ cmd[15]=opTIMER_WAIT;
+ cmd[16]=LC2_byte1();
+ cmd[17]=LX_byte2(time);
+ cmd[18]=LX_byte3(time);
+ cmd[19]=LV0(0);
 
- write(*socket_id,&timer_wait_cmd[0],14);
+ cmd[20]=opTIMER_READY;
+ cmd[21]=LV0(0);
 
- message_id_counter++;
-
- // Set message count id
- p=(void *)&message_id_counter;
- cp=(unsigned char *)p;
- timer_ready_cmd[2]=*cp;
- timer_ready_cmd[3]=*(cp+1);
-
- timer_ready_cmd[0]=LC0(8);
- timer_ready_cmd[6]=LC0(1<<4);
- timer_ready_cmd[7]=opTIMER_READY;
- timer_ready_cmd[8]=LV1(0);
- timer_ready_cmd[9]=(4&0xff); 
-//timer_ready_cmd[12]=LC0(port_id);
-
+ cmd[24]=port_id;
 #ifdef __BT_debug
  fprintf(stderr,"BT_timed_motor_port_start timer ready command:\n");
- for(int i=0; i<10; i++)
+ for(int i=0; i<26; i++)
  {
-  fprintf(stderr,"%X, ",timer_ready_cmd[i]&0xff);
+  fprintf(stderr,"%X, ",cmd[i]&0xff);
  }
  fprintf(stderr,"\n");
 #endif
 
- write(*socket_id,&timer_ready_cmd[0],10);
+ write(*socket_id,&cmd[0],26);
+ read(*socket_id,&reply[0],1023);
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_wait(): Command successful\n");
+  return(reply[5]!=0);
+ }
+ else{
+  fprintf(stderr,"BT_wait(): Command failed\n");
+  return(-1);
+ }
 
  message_id_counter++;
 
- BT_motor_port_stop(port_id, 0);
  return(1);
 }
 

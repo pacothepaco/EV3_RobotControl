@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
  fgets(&reply[0], 1020, stdin);*/
 
  //BT_timed_motor_port_start(MOTOR_B, -20, 400, 1000, 300);
- BT_timed_motor_port_start_v2(MOTOR_B, -20, 1000);
+ BT_timed_motor_port_start_v2(MOTOR_B, -20, 400);
  fgets(&reply[0], 1020, stdin);
 
  BT_motor_port_stop(MOTOR_B, 0);

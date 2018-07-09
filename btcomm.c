@@ -142,8 +142,8 @@ int BT_play_tone_sequence(const int tone_data[50][3])
  // This function does not check the array is properly sized/formatted, so be sure to provide 
  //  properly formatted input.
  //
- // Returns:  1 on success
- //           0 otherwise
+ // Returns:  0 on success
+ //           -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////////////////////
   
  int len;
@@ -218,7 +218,7 @@ int BT_play_tone_sequence(const int tone_data[50][3])
  write(*socket_id,&cmd_string[0],len+2);
 
  message_id_counter++; 
- return(1);
+ return(0);
 }
 
 int BT_motor_port_start(char port_ids, char power)
@@ -243,8 +243,8 @@ int BT_motor_port_start(char port_ids, char power)
  // Inputs: The port identifiers
  //         Desired power value in [-100,100]
  //
- // Returns: 1 on success
- //          0 otherwise  
+ // Returins: 0 on success
+ //          -1 otherwise  
  //////////////////////////////////////////////////////////////////////////////////////////////////
 
  void *p;
@@ -286,7 +286,7 @@ int BT_motor_port_start(char port_ids, char power)
  write(*socket_id,&cmd_string[0],15);
 
  message_id_counter++; 
- return(1); 
+ return(0); 
 }
 
 int BT_motor_port_stop(char port_ids, int brake_mode)
@@ -298,8 +298,8 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
  //
  // Inputs: Port ids of the motors that should be stopped
  // 	    brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
@@ -338,7 +338,7 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
  write(*socket_id,&cmd_string[0],11);
 
  message_id_counter++; 
- return(1); 
+ return(0);
 }
 
 
@@ -347,8 +347,8 @@ int BT_all_stop(int brake_mode){
  // Applies breaks to all motors.
  //
  // Inputs: brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //
  //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -379,7 +379,7 @@ int BT_all_stop(int brake_mode){
  write(*socket_id,&cmd_string[0],11);
 
  message_id_counter++;
- return(1);
+ return(0);
 
 }
 
@@ -399,8 +399,8 @@ int BT_drive(char lport, char rport, char power){
  //         port identifier of right port
  //         power for ports in [-100, 100]
  //
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////////////////////
  
  void *p;
@@ -412,13 +412,13 @@ int BT_drive(char lport, char rport, char power){
  if (power>100||power<-100)
  {
   fprintf(stderr,"BT_drive: Power must be in [-100, 100]\n");
-  return(0);
+  return(-1);
  }
 
  if (lport>8 || rport>8)
  {
   fprintf(stderr,"BT_drive: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
  ports = lport|rport;
 
@@ -445,7 +445,7 @@ int BT_drive(char lport, char rport, char power){
  write(*socket_id,&cmd_string[0],15);
 
  message_id_counter++; 
- return(1);
+ return(0);
 
 }
 
@@ -466,8 +466,8 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  //         port identifier of right port
  //         power for right port in [-100, 100]
  //
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
@@ -477,13 +477,13 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  if (lpower>100||lpower<-100||rpower>100||lpower<-100)
  {
   fprintf(stderr,"BT_drive: Power must be in [-100, 100]\n");
-  return(0);
+  return(-1);
  }
 
  if (lport>8 || rport>8)
  {
   fprintf(stderr,"BT_drive: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  // Set message count id
@@ -515,7 +515,7 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
 
  message_id_counter++;
 
- return(1);
+ return(0);
 
 }
 
@@ -534,8 +534,8 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  //         power for port in [-100, 100]
  //         time in ms
  //
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
@@ -545,13 +545,13 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  if (power>100||power<-100)
  {
   fprintf(stderr,"BT_timed_motor_port_start: Power must be in [-100, 100]\n");
-  return(0);
+  return(-1);
  }
 
  if (port_id>8)
  {
   fprintf(stderr,"BT_timed_motor_port_start: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  // Set message count id
@@ -564,15 +564,15 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  cmd_string[7]=opOUTPUT_TIME_POWER;
  cmd_string[9]=port_id;
  cmd_string[11]=power;
- cmd_string[12]=LC2_byte1(); //ramp up
- cmd_string[13]=LX_byte2(ramp_up_time);
- cmd_string[14]=LX_byte3(ramp_up_time);
- cmd_string[15]=LC2_byte1(); //run
- cmd_string[16]=LX_byte2(run_time);
- cmd_string[17]=LX_byte3(run_time);
- cmd_string[18]=LC2_byte1(); //ramp down
- cmd_string[19]=LX_byte2(ramp_down_time);
- cmd_string[20]=LX_byte3(ramp_down_time);
+ cmd_string[12]=LC2_byte0(); //ramp up
+ cmd_string[13]=LX_byte1(ramp_up_time);
+ cmd_string[14]=LX_byte2(ramp_up_time);
+ cmd_string[15]=LC2_byte0(); //run
+ cmd_string[16]=LX_byte1(run_time);
+ cmd_string[17]=LX_byte2(run_time);
+ cmd_string[18]=LC2_byte0(); //ramp down
+ cmd_string[19]=LX_byte1(ramp_down_time);
+ cmd_string[20]=LX_byte2(ramp_down_time);
  cmd_string[21]=0;
 
 #ifdef __BT_debug
@@ -588,7 +588,7 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
 
  message_id_counter++;
 
- return(1);
+ return(0);
 }
 
 int BT_timed_motor_port_start_v2(char port_id, char power, int time){
@@ -606,33 +606,26 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  //         power for port in [-100, 100]
  //         time in ms
  //
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
  char reply[1024];
 
-// unsigned char cmd[29]= {0x00,0x00, 0x00,0x00, 0x00, 0x00,0x00,  0xA4,   0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00,  0x00,  0x00,0x00,0x00,0x00, 0x00,0x00, 0x00,   0x00,0x00, 0xA3, 0x00,   0x00,   0x00};
- //                     |length-2| |cnt_id|   |type| |header| |set_pwr| |layer| |port| |power|  |start| |layer| |port|  |wait|    |time|         |variable| |ready| |variable| |stop| |layer| |port_id| |break|
+ unsigned char cmd[26]= {0x00,0x00, 0x00,0x00, 0x00, 0x00,0x00,  0xA4,   0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00,   0x00, 0x00, 0x00,0x00, 0x00,       0x00,   0x00,      0xA3, 0x00,     0x00,   0x00};
+ //                     |length-2| |cnt_id|   |type| |header| |set_pwr| |layer| |port| |power|  |start| |layer| |port|  |wait| |LC2|    |time| |var addr| |ready| |var addr| |stop| |layer| |port_id| |break|
 
- //unsigned char timer_wait_cmd[14] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00,0x00,0x00,0x00, 0x00, 0x00};
- //                                 |length-2| | cnt_id | |type| | header |  |cmd| |time|                |variable|
-
- //unsigned char timer_ready_cmd[10] = {0x00,0x00, 0x00,0x00, 0x80, 0x00,0x00,  0x00,  0x00, 0x00};
- //                                 |length-2| | cnt_id | |type| | header |  |cmd|  |variable| 
-
- unsigned char cmd[26]= {0x00,0x00, 0x00,0x00, 0x00, 0x00,0x00,  0xA4,   0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0xA3, 0x00, 0x00, 0x00};
  if (power>100||power<-100)
  {
   fprintf(stderr,"BT_timed_motor_port_start: Power must be in [-100, 100]\n");
-  return(0);
+  return(-1);
  }
 
  if (port_id>8)
  {
   fprintf(stderr,"BT_timed_motor_port_start: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  //BT_motor_port_start(port_id, power);
@@ -650,9 +643,9 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  cmd[14]=port_id;
 
  cmd[15]=opTIMER_WAIT;
- cmd[16]=LC2_byte1();
- cmd[17]=LX_byte2(time);
- cmd[18]=LX_byte3(time);
+ cmd[16]=LC2_byte0();
+ cmd[17]=LX_byte1(time);
+ cmd[18]=LX_byte2(time);
  cmd[19]=LV0(0);
 
  cmd[20]=opTIMER_READY;
@@ -682,7 +675,7 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
 
  message_id_counter++;
 
- return(1);
+ return(0);
 }
 
 
@@ -710,7 +703,7 @@ int BT_read_touch_sensor(char sensor_port){
  if (sensor_port>8)
  {
   fprintf(stderr,"BT_read_touch_sensor: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  // Set message count id
@@ -784,7 +777,7 @@ int BT_read_colour_sensor(char sensor_port){
  if (sensor_port>8)
  {
   fprintf(stderr,"BT_read_colour_sensor: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  // Set message count id
@@ -852,7 +845,7 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  if (sensor_port>8)
  {
   fprintf(stderr,"BT_read_colour_sensor_RGB: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  cmd_string[0]=LC0(15);
@@ -941,7 +934,7 @@ int BT_read_ultrasonic_sensor(char sensor_port){
  if (sensor_port>8)
  {
   fprintf(stderr,"BT_read_ultrasonic_sensor: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  cmd_string[0]=LC0(13);
@@ -1004,7 +997,7 @@ int BT_clear_gyro_sensor(char sensor_port){
  if (sensor_port>8)
  {
   fprintf(stderr,"BT_clear_gyro_sensor: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  p=(void *)&message_id_counter;
@@ -1037,7 +1030,7 @@ int BT_clear_gyro_sensor(char sensor_port){
   fprintf(stderr,"BT_clear_gyro_sensor: Command failed\n");
   return(-1);
  }
- return 0;
+ return (0);
 }
 
 int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
@@ -1065,7 +1058,7 @@ int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
  if (sensor_port>8)
  {
   fprintf(stderr,"BT_read_gyro_sensor: Invalid port id value\n");
-  return(0);
+  return(-1);
  }
 
  cmd_string[0]=LC0(14);

@@ -16,7 +16,7 @@
 #ifndef __btcomm_header
 #define __btcomm_header
 
-#include <stdio.h>
+#include "stdio.h"
 #include <errno.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -32,6 +32,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/rfcomm.h>
+#include "bytecodes.h"
 
 extern int message_id_counter;		// <-- Global message id counter
 #define __BT_debug			// Uncomment to trigger printing of BT debug messages
@@ -42,6 +43,11 @@ extern int message_id_counter;		// <-- Global message id counter
 #define MOTOR_C 0x04
 #define MOTOR_D 0x08
 
+//Hex identifiers of the four input ports
+#define PORT_1 0x00
+#define PORT_2 0x01
+#define PORT_3 0x02
+#define PORT_4 0x03
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command string encoding://   Prefix format:  |0x00:0x00|   |0x00:0x00|   |0x00|   |0x00:0x00|   |.... payload ....|
 //                   				|length-2|    | cnt_id |    |type|   | header |    
@@ -71,10 +77,21 @@ extern int message_id_counter;		// <-- Global message id counter
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int BT_open(const char *device_id);
-int BT_close(int socket_id);
-int BT_setEV3name(const char *name, int socket_id);
-int BT_play_tone_sequence(const int tone_data[50][3], int socket_id);
-int BT_motor_port_start(char port_ids, char power, int socket_id);
-int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id);
+int BT_close();
+int BT_setEV3name(const char *name);
+int BT_play_tone_sequence(const int tone_data[50][3]);
+int BT_motor_port_start(char port_ids, char power);
+int BT_motor_port_stop(char port_ids, int brake_mode);
+int BT_all_stop(int brake_mode);
+int BT_drive(char lport, char rport, char power);
+int BT_turn(char lport, char lpower,  char rport, char rpower);
+int BT_read_touch_sensor(char sensor_port);
+int BT_read_colour_sensor(char sensor_port);
+int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]); 
+int BT_read_ultrasonic_sensor(char sensor_port);
+int BT_clear_gyro_sensor(char sensor_port);
+int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]);
+int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int run_time, int ramp_down_time);
+int BT_timed_motor_port_start_v2(char port_id, char power, int time);
 
 #endif

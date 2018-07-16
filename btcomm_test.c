@@ -6,7 +6,6 @@
 
 int main(int argc, char *argv[])
 {
- int EV3_socket;
  char test_msg[8]={0x06,0x00,0x2A,0x00,0x00,0x00,0x00,0x01};
  char reply[1024];
  int tone_data[50][3];
@@ -36,34 +35,138 @@ int main(int argc, char *argv[])
  
  //just uncomment your bot's hex key to compile for your bot, and comment the other ones out.
  #ifndef HEXKEY
- 	#define HEXKEY "00:16:53:3F:71:F0"	// <--- SET UP YOUR NXT's HEX ID here
+ 	#define HEXKEY "00:16:53:56:55:D9"	// <--- SET UP YOUR EV3's HEX ID here
  #endif
 
- EV3_socket=BT_open(HEXKEY);
- fprintf(stderr,"EV3 socket identifier: %d\n",EV3_socket);
+ BT_open(HEXKEY);
 
  fprintf(stderr,"Sending message:\n");
  for (int i=0; i<8; i++)
    fprintf(stderr,"%x ",test_msg[i]);
  fprintf(stderr,"\n");
 
- write(EV3_socket,&test_msg[0],8);
+ //write(&test_msg[0],8);
 
- read(EV3_socket,&reply[0],5);
- fprintf(stderr,"Reply message:\n");
- for (int i=0; i<5; i++)
-   fprintf(stderr,"%x ",reply[i]);
- fprintf(stderr,"\n");
+ //read(&reply[0],5);
+ //fprintf(stderr,"Reply message:\n");
+ //for (int i=0; i<5; i++)
+ //  fprintf(stderr,"%x ",reply[i]);
+ //fprintf(stderr,"\n");
 
- BT_setEV3name("Paco-Bot-Net",EV3_socket);
+ // name must not contain spaces or special characters
+ // max name length is 12 characters
+ //BT_setEV3name("Legally_Pink");
 
- BT_play_tone_sequence(tone_data,EV3_socket);
+ //BT_play_tone_sequence(tone_data);
 
- BT_motor_port_start(MOTOR_D,10,EV3_socket);
- BT_motor_port_start(MOTOR_C,-10,EV3_socket);
- gets(&reply[0]);
- BT_motor_port_stop(MOTOR_C|MOTOR_D,1,EV3_socket);
- 
- BT_close(EV3_socket);
+ /*int readings[2];
+ BT_clear_gyro_sensor(PORT_2);
+ BT_read_gyro_sensor(PORT_2, readings);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_motor_port_start(MOTOR_D,30);
+ BT_motor_port_start(MOTOR_C,-30);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_all_stop(1); 
+ BT_read_gyro_sensor(PORT_2, readings);*/
+
+ //BT_drive(MOTOR_C, MOTOR_D, -30);
+ //fgets(&reply[0], 1020, stdin);
+ //BT_all_stop(1);
+
+ //BT_turn(MOTOR_C, 40, MOTOR_D, -30);
+ fgets(&reply[0], 1020, stdin);
+ //BT_all_stop(1);
+
+ //int touch = BT_read_touch_sensor(PORT_3);
+ //fprintf(stderr, "Touch sensor value: %d\n", touch);
+
+ /*int RGB_array[3];
+ int color=0;
+ color=BT_read_colour_sensor(PORT_4);
+ fprintf(stderr, "Color: %d\n", color);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+ fgets(&reply[0], 1020, stdin);*/
+/*
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ fprintf(stderr, "Color: %d\n", color);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+ fgets(&reply[0], 1020, stdin);*/
+
+ /*int distance=BT_read_ultrasonic_sensor(PORT_1);
+ fprintf(stderr, "distance: %d\n", distance);
+ fgets(&reply[0], 1020, stdin);*/
+
+ /*int gyro_readings[2];
+ BT_read_gyro_sensor(PORT_2, gyro_readings);
+
+ BT_motor_port_start(MOTOR_D,-30);
+ BT_motor_port_start(MOTOR_C,30);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+ BT_all_stop(1);
+ fgets(&reply[0], 1020, stdin);
+
+ color=BT_read_colour_sensor(PORT_4);
+ BT_read_colour_sensor_RGB(PORT_4, RGB_array);
+ fprintf(stderr, "Color: %d\n", color);
+ fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
+
+ fgets(&reply[0], 1020, stdin);
+
+ BT_motor_port_start(MOTOR_D,30);
+ BT_motor_port_start(MOTOR_C,-30);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+
+ BT_all_stop(1);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_motor_port_start(MOTOR_D,30);
+ BT_motor_port_start(MOTOR_C,-30);
+ fgets(&reply[0], 1020, stdin);
+ BT_read_gyro_sensor(PORT_2, readings);
+ BT_all_stop(0);
+ fgets(&reply[0], 1020, stdin);*/
+
+ BT_timed_motor_port_start(MOTOR_B, -20, 0, 400, 0);
+ //BT_timed_motor_port_start_v2(MOTOR_B, 20, 400);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_motor_port_stop(MOTOR_B, 0);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_motor_port_stop(MOTOR_B, 0);
+ fgets(&reply[0], 1020, stdin);
+
+ BT_close();
  fprintf(stderr,"Done!\n"); 
 }

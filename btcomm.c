@@ -10,6 +10,7 @@
  * ********************************************************************************************************************/
 #include "btcomm.h"
 int message_id_counter=1;
+int *socket_id;
 
 int BT_open(const char *device_id)
 {
@@ -17,57 +18,58 @@ int BT_open(const char *device_id)
  // Open a socket to the specified Lego EV3 device specified by the provided hex ID string
  //
  // Input: The hex string identifier for the Lego EV3 block
- // Returns: An int identifier for an open socket to the device. Don't lose it!
+ // Returns: 0 on success
+ //          -1 otherwise 
  //
  // Derived from bluetooth.c by Don Neumann
  //////////////////////////////////////////////////////////////////////////////////////////////////////
   
  int rv;
  struct sockaddr_rc addr = { 0 };
- int s, status, socket_id;
+ int s, status;
  char dest[18];
-   
+ socket_id=(int*)malloc(sizeof(int));   
  fprintf(stderr,"Request to connect to device %s\n",device_id);
  
- socket_id = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+ *socket_id = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
  // set the connection parameters (who to connect to)
  addr.rc_family = AF_BLUETOOTH;
  addr.rc_channel = (uint8_t) 1;
  str2ba(device_id, &addr.rc_bdaddr );
 
- status = connect(socket_id, (struct sockaddr *)&addr, sizeof(addr));
+ status = connect(*socket_id, (struct sockaddr *)&addr, sizeof(addr));
  if( status == 0 ) {
-	printf("Connection to %s established.\n", device_id);
+	printf("Connection to %s established at socket: %d.\n", device_id, *socket_id);
  }
  if( status < 0 ) {
        perror("Connection attempt failed ");
        return(-1);
  }
- return(socket_id);
+ return 0;
 }
 
-int BT_close(int socket_id)
+int BT_close()
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // Close the communication socket to the EV3
- // Input: socket identifier obtained upon opening the connection.
  /////////////////////////////////////////////////////////////////////////////////////////////////////  
- fprintf(stderr,"Request to close connection to device at socket id %d\n",socket_id);
- close(socket_id);
+ fprintf(stderr,"Request to close connection to device at socket id %d\n",*socket_id);
+ close(*socket_id);
+ free(socket_id);
 }
 
-int BT_setEV3name(const char *name, int socket_id)
+int BT_setEV3name(const char *name)
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
  // This function can be used to name your EV3. 
- // Inputs: A zero-terminated string containing the desired name, length <  24 characters
- //         The socket-ID for the lego block
+ // Inputs: A zero-terminated string containing the desired name, length <=  12 characters
  /////////////////////////////////////////////////////////////////////////////////////////////////////
 
  char cmd_string[1024];
- char cmd_prefix[11]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0xD4,     0x08,   0x84,              0x00};
+ unsigned char cmd_prefix[11]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0xD4,     0x08,   0x84,              0x00};
  //                   |length-2|    | cnt_id |    |type|   | header |    |ComSet|  |Op|    |String prefix|   
  char reply[1024];
+ memset(&reply[0],0,1024);
  int len;
  void *lp;
  unsigned char *cp;
@@ -75,9 +77,9 @@ int BT_setEV3name(const char *name, int socket_id)
  memset(&cmd_string[0],0,1024);
  // Check input string fits within our buffer, then pre-format the command sequence 
  len=strlen(name);
- if (len>24)
+ if (len>12)
  {
-  fprintf(stderr,"BT_setEV3name(): The input name string is too long - 24 characters max, no white spaces or special characters\n");
+  fprintf(stderr,"BT_setEV3name(): The input name string is too long - 12 characters max, no white spaces or special characters\n");
   return(-1);
  }
  memcpy(&cmd_string[0],&cmd_prefix[0],10*sizeof(unsigned char));
@@ -105,8 +107,8 @@ int BT_setEV3name(const char *name, int socket_id)
  fprintf(stderr,"\n");
 #endif  
 
- write(socket_id,&cmd_string[0],len+2);
- read(socket_id,&reply[0],1023);
+ write(*socket_id,&cmd_string[0],len+2);
+ read(*socket_id,&reply[0],1023);
 
 #ifdef __BT_debug
  fprintf(stderr,"Set name reply:\n");
@@ -123,7 +125,7 @@ int BT_setEV3name(const char *name, int socket_id)
  message_id_counter++;
 }
 
-int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
+int BT_play_tone_sequence(const int tone_data[50][3])
 {
  //////////////////////////////////////////////////////////////////////////////////////////////////
  // 
@@ -140,8 +142,8 @@ int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
  // This function does not check the array is properly sized/formatted, so be sure to provide 
  //  properly formatted input.
  //
- // Returns:  1 on success
- //           0 otherwise
+ // Returns:  0 on success
+ //           -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////////////////////
   
  int len;
@@ -149,14 +151,14 @@ int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
  int dur;
  int vol;
  void *p;
- char *cmd_str_p;
+ unsigned char *cmd_str_p;
  unsigned char *cp;
- char cmd_string[1024];
- char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
- //                  |length-2|    | cnt_id |    |type|   | header |    
+ unsigned char cmd_string[1024];
+ unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
+ //                           |length-2|    | cnt_id |    |type|   | header |    
 
  memset(&cmd_string[0],0,1024);
- strcpy(&cmd_string[0],&cmd_prefix[0]);
+ strcpy((char *)&cmd_string[0],(char *)&cmd_prefix[0]);
  len=5;
  
  // Set message count id
@@ -213,17 +215,17 @@ int BT_play_tone_sequence(const int tone_data[50][3], int socket_id)
  fprintf(stderr,"\n");
 #endif  
 
- write(socket_id,&cmd_string[0],len+2);
+ write(*socket_id,&cmd_string[0],len+2);
 
  message_id_counter++; 
- return(1);
+ return(0);
 }
 
-int BT_motor_port_start(char port_ids, char power, int socket_id)
+int BT_motor_port_start(char port_ids, char power)
 {
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // This function sends a command to the specify motor ports to set the motor power to
+ // This function sends a command to the specified motor ports to set the motor power to
  // the desired value.
  //
  // Motor ports are identified by hex values (defined at the top), but here we will use
@@ -240,16 +242,15 @@ int BT_motor_port_start(char port_ids, char power, int socket_id)
  //
  // Inputs: The port identifiers
  //         Desired power value in [-100,100]
- //         The socket-ID for the Lego block
  //
- // Returns: 1 on success
- //          0 otherwise  
+ // Returins: 0 on success
+ //          -1 otherwise  
  //////////////////////////////////////////////////////////////////////////////////////////////////
 
  void *p;
  unsigned char *cp;
- char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
- //                  |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
  {
@@ -282,13 +283,13 @@ int BT_motor_port_start(char port_ids, char power, int socket_id)
  fprintf(stderr,"\n");
 #endif  
  
- write(socket_id,&cmd_string[0],15);
+ write(*socket_id,&cmd_string[0],15);
 
  message_id_counter++; 
- return(1); 
+ return(0); 
 }
 
-int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
+int BT_motor_port_stop(char port_ids, int brake_mode)
 {
  //////////////////////////////////////////////////////////////////////////////////
  //
@@ -297,14 +298,13 @@ int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
  //
  // Inputs: Port ids of the motors that should be stopped
  // 	    brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
- //         socket_ID for the lego block
- // Returns: 1 on success
- //          0 otherwise
+ // Returns: 0 on success
+ //          -1 otherwise
  //////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
- //                  |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
+ unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
+ //                           |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
  
  if (port_ids>15)
  {
@@ -335,9 +335,780 @@ int BT_motor_port_stop(char port_ids, int brake_mode, int socket_id)
  fprintf(stderr,"\n");
 #endif  
  
- write(socket_id,&cmd_string[0],11);
+ write(*socket_id,&cmd_string[0],11);
 
  message_id_counter++; 
- return(1); 
+ return(0);
+}
+
+
+int BT_all_stop(int brake_mode){
+ //////////////////////////////////////////////////////////////////////////////////////////////////////
+ // Applies breaks to all motors.
+ //
+ // Inputs: brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
+ // Returns: 0 on success
+ //          -1 otherwise
+ //
+ //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ void *p;
+ unsigned char *cp;
+ char port_ids = MOTOR_A|MOTOR_B|MOTOR_C|MOTOR_D;
+ unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
+ //                  |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+  
+ cmd_string[9]=port_ids;
+ cmd_string[10]=brake_mode;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_all_stop command string:\n");
+ for(int i=0; i<11; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],11);
+
+ message_id_counter++;
+ return(0);
+
+}
+
+int BT_drive(char lport, char rport, char power){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // This function sends a command to the left and right motor ports to set the motor power to
+ // the desired value.
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Power must be in [-100, 100]
+ //
+ // Note that starting a motor at 0% power is *not the same* as stopping the motor.
+ // to fully stop the motors you need to use the appropriate BT command.
+ //
+ // Inputs: port identifier of left port
+ //         port identifier of right port
+ //         power for ports in [-100, 100]
+ //
+ // Returns: 0 on success
+ //          -1 otherwise
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ void *p;
+ unsigned char *cp;
+ char ports;
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ //                           |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
+
+ if (power>100||power<-100)
+ {
+  fprintf(stderr,"BT_drive: Power must be in [-100, 100]\n");
+  return(-1);
+ }
+
+ if (lport>8 || rport>8)
+ {
+  fprintf(stderr,"BT_drive: Invalid port id value\n");
+  return(-1);
+ }
+ ports = lport|rport;
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[9]=ports;
+ cmd_string[11]=power;
+ cmd_string[14]=ports;
+
+
+#ifdef __BT_debug 
+ fprintf(stderr,"BT_drive command string:\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif  
+
+ write(*socket_id,&cmd_string[0],15);
+
+ message_id_counter++; 
+ return(0);
+
+}
+
+int BT_turn(char lport, char lpower, char rport, char rpower){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // This function sends a command to the left and right motor ports to set the motor power to
+ // the desired value.
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Power must be in [-100, 100]
+ //
+ // Note that starting a motor at 0% power is *not the same* as stopping the motor.
+ // to fully stop the motors you need to use the appropriate BT command.
+ //
+ // Inputs: port identifier of left port
+ //         power for left port in [-100, 100]
+ //         port identifier of right port
+ //         power for right port in [-100, 100]
+ //
+ // Returns: 0 on success
+ //          -1 otherwise
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char *cp;
+ unsigned char cmd_string[20]={0x12,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,      0x81,0x00,    0xA4,     0x00,     0x00, 0x81,0x00,  0xA6,    0x00,   0x00};
+ //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |lport id|  |power|  |set power| |layer| |rport id| |power|     |start|  |layer| |port ids|
+
+ if (lpower>100||lpower<-100||rpower>100||lpower<-100)
+ {
+  fprintf(stderr,"BT_drive: Power must be in [-100, 100]\n");
+  return(-1);
+ }
+
+ if (lport>8 || rport>8)
+ {
+  fprintf(stderr,"BT_drive: Invalid port id value\n");
+  return(-1);
+ }
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ //set up power and port for left motor
+ cmd_string[9]=lport;
+ cmd_string[11]=lpower;
+
+ //set up power and port for right motor
+ cmd_string[14] = rport;
+ cmd_string[16] = rpower;
+
+ cmd_string[19] = lport|rport;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_turn command string:\n");
+ for(int i=0; i<20; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],20);
+
+ message_id_counter++;
+
+ return(0);
+
+}
+
+int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int run_time, int ramp_down_time){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // This function sends a command to the 
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Power must be in [-100, 100]
+ //
+ // Note that starting a motor at 0% power is *not the same* as stopping the motor.
+ // to fully stop the motors you need to use the appropriate BT command.
+ //
+ // Inputs: port identifier
+ //         power for port in [-100, 100]
+ //         time in ms
+ //
+ // Returns: 0 on success
+ //          -1 otherwise
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char *cp;
+ unsigned char cmd_string[22]={0x00,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0x00,  0x00,   0x00,     0x81,0x00, 0x00,0x00,0x00, 0x00,0x00,0x00,  0x00,0x00,0x00,     0x00};
+ //                          |length-2| | cnt_id | |type|   |header|    |cmd| |layer| |port ids|  |power|      |ramp up|      |run|           |ramp down|      |brake|
+
+ if (power>100||power<-100)
+ {
+  fprintf(stderr,"BT_timed_motor_port_start: Power must be in [-100, 100]\n");
+  return(-1);
+ }
+
+ if (port_id>8)
+ {
+  fprintf(stderr,"BT_timed_motor_port_start: Invalid port id value\n");
+  return(-1);
+ }
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[0]=LC0(20);
+ cmd_string[7]=opOUTPUT_TIME_POWER;
+ cmd_string[9]=port_id;
+ cmd_string[11]=power;
+ cmd_string[12]=LC2_byte0(); //ramp up
+ cmd_string[13]=LX_byte1(ramp_up_time);
+ cmd_string[14]=LX_byte2(ramp_up_time);
+ cmd_string[15]=LC2_byte0(); //run
+ cmd_string[16]=LX_byte1(run_time);
+ cmd_string[17]=LX_byte2(run_time);
+ cmd_string[18]=LC2_byte0(); //ramp down
+ cmd_string[19]=LX_byte1(ramp_down_time);
+ cmd_string[20]=LX_byte2(ramp_down_time);
+ cmd_string[21]=0;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_motor_port_start command string:\n");
+ for(int i=0; i<22; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],22);
+
+ message_id_counter++;
+
+ return(0);
+}
+
+int BT_timed_motor_port_start_v2(char port_id, char power, int time){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // This function sends a command to the 
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Power must be in [-100, 100]
+ //
+ // Note that starting a motor at 0% power is *not the same* as stopping the motor.
+ // to fully stop the motors you need to use the appropriate BT command.
+ //
+ // Inputs: port identifier
+ //         power for port in [-100, 100]
+ //         time in ms
+ //
+ // Returns: 0 on success
+ //          -1 otherwise
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char *cp;
+ char reply[1024];
+
+ unsigned char cmd[26]= {0x00,0x00, 0x00,0x00, 0x00, 0x00,0x00,  0xA4,   0x00,  0x00, 0x81,0x00, 0xA6,  0x00,   0x00,   0x00, 0x00, 0x00,0x00, 0x00,       0x00,   0x00,      0xA3, 0x00,     0x00,   0x00};
+ //                     |length-2| |cnt_id|   |type| |header| |set_pwr| |layer| |port| |power|  |start| |layer| |port|  |wait| |LC2|    |time| |var addr| |ready| |var addr| |stop| |layer| |port_id| |break|
+
+ if (power>100||power<-100)
+ {
+  fprintf(stderr,"BT_timed_motor_port_start: Power must be in [-100, 100]\n");
+  return(-1);
+ }
+
+ if (port_id>8)
+ {
+  fprintf(stderr,"BT_timed_motor_port_start: Invalid port id value\n");
+  return(-1);
+ }
+
+ //BT_motor_port_start(port_id, power);
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd[2]=*cp;
+ cmd[3]=*(cp+1);
+
+ cmd[0]=LC0(24);
+ cmd[6]=LC0(10<<2); //size of local memory
+ cmd[9]=port_id;
+ cmd[11]=power;
+ cmd[14]=port_id;
+
+ cmd[15]=opTIMER_WAIT;
+ cmd[16]=LC2_byte0();
+ cmd[17]=LX_byte1(time);
+ cmd[18]=LX_byte2(time);
+ cmd[19]=LV0(0);
+
+ cmd[20]=opTIMER_READY;
+ cmd[21]=LV0(0);
+
+ cmd[24]=port_id;
+#ifdef __BT_debug
+ fprintf(stderr,"BT_timed_motor_port_start timer ready command:\n");
+ for(int i=0; i<26; i++)
+ {
+  fprintf(stderr,"%X, ",cmd[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd[0],26);
+ read(*socket_id,&reply[0],1023);
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_wait(): Command successful\n");
+  return(reply[5]!=0);
+ }
+ else{
+  fprintf(stderr,"BT_wait(): Command failed\n");
+  return(-1);
+ }
+
+ message_id_counter++;
+
+ return(0);
+}
+
+
+int BT_read_touch_sensor(char sensor_port){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Reads the value from the touch sensor.
+ // 
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ //
+ // Inputs: port identifier of touch sensor port
+ //
+ // Returns: 1 if touch sensor is pushed 
+ //          0 if touch sensor is not pushed
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ char reply[1024];
+ unsigned char *cp;
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00 };
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_touch_sensor: Invalid port id value\n");
+  return(-1);
+ }
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_PCT);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(0x10); //type
+ cmd_string[13]=LC0(0x01); //data set
+ cmd_string[14]=GV0(0x00); //global var
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_touch_sensor command string:\n");
+ for(int i=0; i<15; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],15);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_touch_sensor(): Command successful\n");
+  return(reply[5]!=0);
+ }
+ else{
+  fprintf(stderr,"BT_touch_sensor(): Command failed\n");
+  return(-1);
+ }
+}
+
+int BT_read_colour_sensor(char sensor_port){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Reads the value from the colour sensor.
+ //
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ //
+ // Inputs: port identifier of colour sensor port
+ //
+ // Returns: A colour value as an int (see table below).
+ //
+ // Value Colour
+ //  0    No colour read
+ //  1    Black
+ //  2    Blue
+ //  3    Green
+ //  4    Yellow
+ //  5    Red
+ //  6    White
+ //  7    Brown
+ //          
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ char reply[1024];
+ memset(&reply[0],0,1024);
+ unsigned char *cp;
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00 };
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_colour_sensor: Invalid port id value\n");
+  return(-1);
+ }
+
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_RAW);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(29); //type
+ cmd_string[12]=LC0(0x02); //mode
+ cmd_string[13]=LC0(0x01); //data set
+ cmd_string[14]=GV0(0x00); //global var
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_colour_sensor command string:\n");
+ for(int i=0; i<15; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],15);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_colour_sensor(): Command successful\n");
+ }
+ else{
+  fprintf(stderr,"BT_colour_sensor(): Command failed\n");
+ }
+ return reply[5];
+}
+
+int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Reads the value from the colour sensor and fills in the passed in RGB array with RGB values,
+ // where R[0, 255], G[0, 255] and B[0, 255].
+ //
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ //
+ // Inputs: port identifier of colour sensor port
+ //
+ // Returns:
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char reply[1024];
+ memset(&reply[0],0,1024); 
+ unsigned char *cp;
+ uint32_t R=0, G=0, B=0;
+
+ unsigned char cmd_string[17]={0x00,0x00, 0x00,0x00, 0x00,  0x0C,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00, 0x00 };
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_colour_sensor_RGB: Invalid port id value\n");
+  return(-1);
+ }
+
+ cmd_string[0]=LC0(15);
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_RAW);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(29); //type
+ cmd_string[12]=LC0(0x04); //mode
+ cmd_string[13]=LC0(3); //data set
+ cmd_string[14]=GV0(0x00); //global var
+ cmd_string[15]=GV0(0x04);
+ cmd_string[16]=GV0(0x08);
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_colour_sensor_RGB command string:\n");
+ for(int i=0; i<17; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],17);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_colour_sensor_RGB(): Command successful\n");
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_colour_sensor_RGB response string:\n");
+ for(int i=0; i<17; i++)
+ {
+  fprintf(stderr,"%X, ",reply[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+  R|=(uint32_t)reply[5];
+  R|=(uint32_t)reply[6]<<8;
+  G|=(uint32_t)reply[9];
+  G|=(uint32_t)reply[10]<<8;
+  B|=(uint32_t)reply[13];
+  B|=(uint32_t)reply[14]<<8;
+  float normalized=(float)R/1020*255;
+  RGB[0]=(int)normalized;
+  normalized=(float)G/1020*255;
+  RGB[1]=(int)normalized;
+  normalized=(float)B/1020*255;
+  RGB[2]=(int)normalized;
+ }
+ else{
+  fprintf(stderr,"BT_colour_sensor_RGB(): Command failed\n");
+  return(-1);
+ }
+ return (0);
+}
+
+int BT_read_ultrasonic_sensor(char sensor_port){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Reads the value from ultrasonic sensor and returns distance in mm to object in front of sensor. 
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ // Inputs: port identifier of ultrasonic sensor port
+ //
+ // Returns: distance in mm
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ unsigned char reply[1024];
+ memset(&reply[0],0,1024);
+ unsigned char *cp;
+
+ unsigned char cmd_string[15]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_ultrasonic_sensor: Invalid port id value\n");
+  return(-1);
+ }
+
+ cmd_string[0]=LC0(13);
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_RAW);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(30); //type
+ cmd_string[13]=LC0(0x01); //data set
+ cmd_string[14]=GV0(0x00); //global var
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_ultrasonic_sensor command string\n");
+ for(int i=0; i<15; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],15);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+if (reply[4]==0x02){
+  fprintf(stderr,"BT_ultrasonic_sensor(): Command successful\n");
+}
+ else{
+  fprintf(stderr,"BT_ultrasonic_sensor: Command failed\n");
+  return(-1);
+ }
+ return (reply[5]);
+}
+
+int BT_clear_gyro_sensor(char sensor_port){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Clears the sensor data of the gyro sensor. 
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ // Inputs: port identifier of gyro sensor port
+ //
+ // Returns: 0 on success
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ unsigned char clr_string[10]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|
+
+ void *p;
+ unsigned char *cp;
+ char reply[1024];
+ memset(&reply[0],0,1024);
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_clear_gyro_sensor: Invalid port id value\n");
+  return(-1);
+ }
+
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ clr_string[0]=LC0(8);
+ clr_string[2]=*cp;
+ clr_string[3]=*(cp+1);
+ clr_string[7]=opINPUT_DEVICE;
+ clr_string[8]=LC0(CLR_ALL);
+ clr_string[10]=sensor_port;
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_clear_gyro_sensor command string\n");
+ for(int i=0; i<11; i++)
+ {
+  fprintf(stderr,"%X, ",clr_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&clr_string[0],10);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_clear_gyro_sensor(): Command successful\n");
+ }
+ else{
+  fprintf(stderr,"BT_clear_gyro_sensor: Command failed\n");
+  return(-1);
+ }
+ return (0);
+}
+
+int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Clears the sensor data of the gyro sensor and then reads the values for angle and speed of angle
+ // change and fills in the provided array.
+ //
+ // Ports are identified as PORT_1, PORT_2, etc
+ //
+ // Inputs: port identifier of gyro sensor port
+ //
+ // Returns: 0 on success
+ //          -1 if EV3 returned an error response
+ //////////////////////////////////////////////////////////////////////////////////////////////////
+ void *p;
+ char reply[1024];
+ memset(&reply[0],0,1024);
+ unsigned char *cp;
+
+ unsigned char cmd_string[16]={0x00,0x00, 0x00,0x00, 0x00,  0x02,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00};
+ //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
+
+
+ if (sensor_port>8)
+ {
+  fprintf(stderr,"BT_read_gyro_sensor: Invalid port id value\n");
+  return(-1);
+ }
+
+ cmd_string[0]=LC0(14);
+ // Set message count id
+ p=(void *)&message_id_counter;
+ cp=(unsigned char *)p;
+ cmd_string[2]=*cp;
+ cmd_string[3]=*(cp+1);
+
+ cmd_string[7]=opINPUT_DEVICE;
+ cmd_string[8]=LC0(READY_RAW);
+ cmd_string[10]=sensor_port;
+ cmd_string[11]=LC0(32); //type
+ cmd_string[12]=LC0(3);//mode
+ cmd_string[13]=LC0(0x02); //data set
+ cmd_string[14]=GV0(0x00); //global var
+ cmd_string[15]=GV0(0x02);
+
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_gyro_sensor command string\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ write(*socket_id,&cmd_string[0],16);
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_read_gyro_sensor(): Command successful\n");
+  fprintf(stderr, "angle: %d, speed: %d\n", reply[5], reply[6]);
+#ifdef __BT_debug
+ fprintf(stderr,"BT_read_gyro_sensor response string:\n");
+ for(int i=0; i<16; i++)
+ {
+  fprintf(stderr,"%X, ",reply[i]&0xff);
+ }
+ fprintf(stderr,"\n");
+#endif
+
+ }
+ else{
+  fprintf(stderr,"BT_read_gyro_sensor: Command failed\n");
+  return(-1);
+ }
+
+ return (0);
 }
 

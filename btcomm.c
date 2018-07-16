@@ -3,14 +3,35 @@
  * 	BT Communications library for Lego EV3 - This provides a bare-bones communication interface between your
  * 	program and the EV3 block. Commands are executed immediately, where appropriate the response from the
  * 	block is processed. 
+ *
+ *      Please read the corresponding .h file for a quick overview of what functions are provided. You *CAN* modify
+ * 	the code here, and expand the API as needed for your work, but be sure to clearly indicate what code was
+ * 	added so your TA and instructor can appropriately evaluate your work.
+ *
+ *      This library is free software, distributed under the GPL license. Please see the attached license file for
+ *      details.
  * 
  * 	Initial release: Sep. 2018
- * 	By: F.J.Estrada
+ * 	By: L. Tishkina
+ * 	    F. Estrada
  * 
  * ********************************************************************************************************************/
 #include "btcomm.h"
-int message_id_counter=1;
-int *socket_id;
+#define RGB_Normalization_Constant  1020.0   // Constant used to normalize RGB values to a range of [0,255]
+					     // If you are having trouble with RGB values looking weird, 
+					     // get under the hood of the RGB sensor read function, print out
+					     // the returned RGB from the EV3 block (which will NOT be in
+					     // [0, 255], and see if the values being returned *for a variety
+					     // of colours under the lighting conditions you will be working on*
+					     // are either much smaller than this constant, or larger.
+					     // Adjust the constant so that you can reliably obtain values in
+					     // [0,255]. CAVEAT -> read values may be dependent on battery power!
+					     
+//#define __BT_debug			// Uncomment to trigger printing of BT messages for debug purposes
+
+int message_id_counter=1;		// <-- This is a global message_id counter, used to keep track of
+					//     messages sent to the EV3
+int *socket_id;				// <-- Socked identifier for your EV3
 
 int BT_open(const char *device_id)
 {
@@ -292,7 +313,6 @@ int BT_motor_port_start(char port_ids, char power)
 int BT_motor_port_stop(char port_ids, int brake_mode)
 {
  //////////////////////////////////////////////////////////////////////////////////
- //
  // Stop the motor(s) at the specified ports. This does not change the output
  // power settings!
  //
@@ -344,12 +364,12 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
 
 int BT_all_stop(int brake_mode){
  //////////////////////////////////////////////////////////////////////////////////////////////////////
- // Applies breaks to all motors.
+ // Stops all motor ports - provided for convenience, of course you can do the same with the 
+ // functions above.
  //
  // Inputs: brake_mode: 0 -> roll to stop, 1 -> active brake (uses battery power)
  // Returns: 0 on success
  //          -1 otherwise
- //
  //////////////////////////////////////////////////////////////////////////////////////////////////////
 
  void *p;
@@ -385,11 +405,17 @@ int BT_all_stop(int brake_mode){
 
 int BT_drive(char lport, char rport, char power){
  ////////////////////////////////////////////////////////////////////////////////////////////////
- //
  // This function sends a command to the left and right motor ports to set the motor power to
- // the desired value.
+ // the desired value. You can drive forward or backward depending on the sign of the power
+ // value.
  //
- // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // Please note that not all motors are created equal - over time, motor performance will vary
+ // so you can expect that setting both motors to the same speed will result in a motion that
+ // is not straight. You can adjust for this by creating a function that adjusts the power to
+ // whichever motor is shown to be more powerful so as to bring it down to the level of the
+ // least performing motor. 
+ //
+ // Ports are identified as MOTOR_A, MOTOR_B, etc. - see btcomm.h
  // Power must be in [-100, 100]
  //
  // Note that starting a motor at 0% power is *not the same* as stopping the motor.
@@ -453,13 +479,18 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This function sends a command to the left and right motor ports to set the motor power to
- // the desired value.
+ // the desired value for the purpose of turning or spinning. 
  //
  // Ports are identified as MOTOR_A, MOTOR_B, etc
  // Power must be in [-100, 100]
  //
- // Note that starting a motor at 0% power is *not the same* as stopping the motor.
- // to fully stop the motors you need to use the appropriate BT command.
+ // Example uses (assumes MOTOR_A is on the right wheel, MOTOR_B is on the left wheel):
+ //	    BT_turn(MOTOR_A, 100, MOTOR_B, 90);      <-- Turn toward the left gently
+ //	    BT_turn(MOTOR_A, 100, MOTOR_B, 50);      <-- Turn toward the left more sharply
+ //	    BT_turn(MOTOR_A, 100, MOTOR_B, 0);       <-- Turn toward the left at the highest possible rate
+ //         BT_turn(MOTOR_A, -50, MOTOR_B, -100);    <-- Turn toward the right while driving backward
+ //	    BT_turn(MOTOR_A, 100, MOTOR_B, -100);    <-- Spin counter-clockwise at full speed
+ //	    BT_turn(MOTOR_A, -50, MOTOR_B, 50);      <-- Spin clockwise at half speed
  //
  // Inputs: port identifier of left port
  //         power for left port in [-100, 100]
@@ -522,13 +553,14 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
 int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int run_time, int ramp_down_time){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // This function sends a command to the 
+ // Provides timed operation of the motor ports. This allows you, for example, to create carefully timed
+ // turns (e.g. when you want to achieve turning by a certain angle), or to implement actions such as
+ // kicking a ball, etc.
  //
- // Ports are identified as MOTOR_A, MOTOR_B, etc
+ // This function provides for smooth power control by allowing you to specify how long the motor will
+ // take to spin up to full power, and how long it will take to wind down back to full stop.
+ //
  // Power must be in [-100, 100]
- //
- // Note that starting a motor at 0% power is *not the same* as stopping the motor.
- // to fully stop the motors you need to use the appropriate BT command.
  //
  // Inputs: port identifier
  //         power for port in [-100, 100]
@@ -594,9 +626,9 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
 int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // This function sends a command to the 
+ // This is a quick call provided for convenience - it sets the motor to the specified power
+ // for the specified amount of time without ramp-up or ramp-down.
  //
- // Ports are identified as MOTOR_A, MOTOR_B, etc
  // Power must be in [-100, 100]
  //
  // Note that starting a motor at 0% power is *not the same* as stopping the motor.
@@ -681,12 +713,9 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
 
 int BT_read_touch_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
- //
  // Reads the value from the touch sensor.
- // 
  //
  // Ports are identified as PORT_1, PORT_2, etc
- //
  //
  // Inputs: port identifier of touch sensor port
  //
@@ -746,11 +775,13 @@ int BT_read_touch_sensor(char sensor_port){
 int BT_read_colour_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Reads the value from the colour sensor.
+ // Reads the value from the colour sensor using the indexed colour method provided by Lego. 
  //
+ // Make sure you test and calibrate your sensor thoroughly - you can expect mis-reads, you can
+ // expect the operation of the sensor will be dependent on ambient illumination, the rreflectivity
+ // of the surface, and battery power. Your code will need to deal with all these external factors.
  //
  // Ports are identified as PORT_1, PORT_2, etc
- //
  //
  // Inputs: port identifier of colour sensor port
  //
@@ -765,7 +796,6 @@ int BT_read_colour_sensor(char sensor_port){
  //  5    Red
  //  6    White
  //  7    Brown
- //          
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  char reply[1024];
@@ -820,23 +850,32 @@ int BT_read_colour_sensor(char sensor_port){
 int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Reads the value from the colour sensor and fills in the passed in RGB array with RGB values,
- // where R[0, 255], G[0, 255] and B[0, 255].
+ // Reads the value from the colour sensor returning an RGB colour triplet.
+ // Notice that this should prove more informative than the indexed colour, however you'll then
+ // have to determine what colour the bot is actually looking at.
  //
+ // Several ways exist to do this, you can define reference RGB values and compute differente
+ // between what the sensor read and the reference, or you can get fancier and use a different
+ // colour space such as HSV (if you want to do that, read up a bit on this - it's easily 
+ // found).
+ // 
+ // Return values are in R[0, 255], G[0, 255] and B[0, 255].
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //
- //
- // Inputs: port identifier of colour sensor port
+ // Inputs: port identifier of colour sensor port, an INT array with 3 entries where the RGB
+ //         tripled will be returned.
  //
  // Returns:
  //          -1 if EV3 returned an error response
+ //           0 on success
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char reply[1024];
  memset(&reply[0],0,1024); 
  unsigned char *cp;
  uint32_t R=0, G=0, B=0;
+ double normalized;
 
  unsigned char cmd_string[17]={0x00,0x00, 0x00,0x00, 0x00,  0x0C,0x00,  0x00,    0x00,       0x00,    0x00,  0x00,  0x00,   0x00,     0x00, 0x00, 0x00 };
  //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|  |port| |type| |mode| |data set| |global var addr|
@@ -896,11 +935,11 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
   G|=(uint32_t)reply[10]<<8;
   B|=(uint32_t)reply[13];
   B|=(uint32_t)reply[14]<<8;
-  float normalized=(float)R/1020*255;
+  normalized=(double)R/RGB_Normalization_Constant*255.0;
   RGB[0]=(int)normalized;
-  normalized=(float)G/1020*255;
+  normalized=(double)G/RGB_Normalization_Constant*255.0;
   RGB[1]=(int)normalized;
-  normalized=(float)B/1020*255;
+  normalized=(double)B/RGB_Normalization_Constant*255.0;
   RGB[2]=(int)normalized;
  }
  else{
@@ -913,11 +952,11 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
 int BT_read_ultrasonic_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Reads the value from ultrasonic sensor and returns distance in mm to object in front of sensor. 
+ // Reads the value from ultrasonic sensor and returns distance in mm to any object in front of the sensor.
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //
- // Inputs: port identifier of ultrasonic sensor port
+ // Inputs: port identifier for the ultrasonic sensor port
  //
  // Returns: distance in mm
  //          -1 if EV3 returned an error response
@@ -977,7 +1016,11 @@ if (reply[4]==0x02){
 int BT_clear_gyro_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Clears the sensor data of the gyro sensor. 
+ // Clears the sensor data of the gyro sensor - this should reset the sensor to 0 degrees.
+ // Note that the sensor is initialized when you first power up the kit, so whatever orientation
+ // the bot has at that point, becomes 0 degrees. This function allows you to reset the sensor
+ // during operation. This will be needed to set specific reference directions to zero, and to
+ // handle sensor drift.
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //

@@ -1,0 +1,20 @@
+comments:
+
+ * timed motor operation:
+   - What happens if motor is already operating at non-zero power?
+     Does it go back to zero and start ramping-up?
+     Should the function reset power to zero before starting timed op?
+
+ * Sensor functions
+   - Document what happens if a different sensor (or no sensor!) is plugged in the specified port
+
+ * Describe within btcomm.h (maybe at the top, below the general header), how the functions you're
+   using from the Lego dev kit work (e.g. the LCX() etc...) so students know what is going on where
+   you're forming messages.
+   
+ * Why does the gyro sensor read function clear the sensor data? 
+ 
+ * Please document within the gyro sensor read function what the numbers read mean (i.e. how do
+   students use them or make sense of them?) maybe give a couple examples...
+   
+   

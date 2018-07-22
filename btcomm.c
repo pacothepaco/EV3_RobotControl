@@ -851,10 +851,10 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // Reads the value from the colour sensor returning an RGB colour triplet.
- // Notice that this should prove more informative than the indexed colour, however you'll then
+ // Notice that this should prove more informative than the indexed colour, however, you'll then
  // have to determine what colour the bot is actually looking at.
  //
- // Several ways exist to do this, you can define reference RGB values and compute differente
+ // Several ways exist to do this, you can define reference RGB values and compute difference
  // between what the sensor read and the reference, or you can get fancier and use a different
  // colour space such as HSV (if you want to do that, read up a bit on this - it's easily 
  // found).
@@ -864,7 +864,7 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  // Ports are identified as PORT_1, PORT_2, etc
  //
  // Inputs: port identifier of colour sensor port, an INT array with 3 entries where the RGB
- //         tripled will be returned.
+ //         triplet will be returned.
  //
  // Returns:
  //          -1 if EV3 returned an error response

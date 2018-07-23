@@ -91,6 +91,15 @@ extern int message_id_counter;		// <-- Global message id counter
 // 
 // Stuffing the bytes in the right order into the message byte string is crucial. If wrong
 // values are being received at the EV3, check the ordering of bytes in the message payload!
+//
+// To help with the right placement of bits into variables (since all variables have to be converted to little endian) 
+// there are helper methods defined in bytecodes.h file. 
+// There are three types of variables - constants (LC0, LC1, etc), local variables (LV0, LV1, etc) and global variables (GV0, GV1, etc). 
+// The first two letters specify the type of variable and the number specifies the size. For example, for a local variable that takes up 1 byt// e,  you would use LV0. 
+// For variables that are longer than 1 byte, you need to call the right method to specify the type of variable and its size LC2_byte0,
+// for example. And then there are methods such as LX_byte1 that will do the byte shifting for each subsequent byte. The byte shifting methods
+// starting with LX can be used for any type of variable.
+//
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Set up a socket to communicate with your Lego EV3 kit
@@ -119,6 +128,9 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
 int BT_timed_motor_port_start_v2(char port_id, char power, int time);
 
 // Sensor operation section
+// If no sensor is plugged into the sensor_port the readings will be 0 for that sensor. If the wrong sensor is
+// plugged into the port then there will be values returned, but they will not correspond to the actual state of 
+// the sensor.
 int BT_read_touch_sensor(char sensor_port);				
 int BT_read_colour_sensor(char sensor_port);				// Indexed colour read function
 int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]); 		// Returns RGB instead of indexed colour

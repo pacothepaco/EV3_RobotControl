@@ -5,16 +5,33 @@ comments:
      Does it go back to zero and start ramping-up?
      Should the function reset power to zero before starting timed op?
 
+   The motor switches to doing the timed operation. I am not sure if stopping the motor first
+   would be expected behaviour. Can easily be modified if this is what we want. 
+
  * Sensor functions
    - Document what happens if a different sensor (or no sensor!) is plugged in the specified port
+   - Done in btcomm.h - not sure if this is the right place for it.
 
  * Describe within btcomm.h (maybe at the top, below the general header), how the functions you're
    using from the Lego dev kit work (e.g. the LCX() etc...) so students know what is going on where
    you're forming messages.
    
+  - added to the section explaining the way to construct messages
+  - the lego kit methods did not work as expected, so I added some new methods there myself, not 
+  sure if I solved the problem in the best way, also my solution needs a bit of extension to include all 
+  the possible combinations of variable types and sizes, this can be easily done
+     
+   
  * Why does the gyro sensor read function clear the sensor data? 
+   - The documentation has been updated to reflect that the function
+   does not actually clear the sensor first.
  
  * Please document within the gyro sensor read function what the numbers read mean (i.e. how do
    students use them or make sense of them?) maybe give a couple examples...
+   TODO
+   - Gyro is a bit of wonky for me still so a bit challenging to make sense of what the numbers should be.  
+   - Thinking of maybe adding a calibration method to the API, to see if that would help with the 
+    values.
+ 
    
    

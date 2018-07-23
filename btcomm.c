@@ -27,7 +27,7 @@
 					     // Adjust the constant so that you can reliably obtain values in
 					     // [0,255]. CAVEAT -> read values may be dependent on battery power!
 					     
-//#define __BT_debug			// Uncomment to trigger printing of BT messages for debug purposes
+#define __BT_debug			// Uncomment to trigger printing of BT messages for debug purposes
 
 int message_id_counter=1;		// <-- This is a global message_id counter, used to keep track of
 					//     messages sent to the EV3
@@ -1023,7 +1023,7 @@ int BT_clear_gyro_sensor(char sensor_port){
  // handle sensor drift.
  //
  // Ports are identified as PORT_1, PORT_2, etc
- //
+ // 
  // Inputs: port identifier of gyro sensor port
  //
  // Returns: 0 on success
@@ -1079,8 +1079,7 @@ int BT_clear_gyro_sensor(char sensor_port){
 int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
- // Clears the sensor data of the gyro sensor and then reads the values for angle and speed of angle
- // change and fills in the provided array.
+ // Reads the values for angle and speed of angle change and fills in the provided array.
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //

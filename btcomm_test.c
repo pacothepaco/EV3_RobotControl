@@ -89,13 +89,14 @@ int main(int argc, char *argv[])
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);*/
-/*
- color=BT_read_colour_sensor(PORT_4);
+
+/* color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
  fprintf(stderr, "Color: %d\n", color);
  fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
 
  fgets(&reply[0], 1020, stdin);
+
 
  color=BT_read_colour_sensor(PORT_4);
  BT_read_colour_sensor_RGB(PORT_4, RGB_array);
@@ -121,9 +122,9 @@ int main(int argc, char *argv[])
  fprintf(stderr, "R: %d, G: %d, B:%d\n", RGB_array[0], RGB_array[1], RGB_array[2]);
  fgets(&reply[0], 1020, stdin);*/
 
- /*int distance=BT_read_ultrasonic_sensor(PORT_1);
+ int distance=BT_read_ultrasonic_sensor(PORT_1);
  fprintf(stderr, "distance: %d\n", distance);
- fgets(&reply[0], 1020, stdin);*/
+ fgets(&reply[0], 1020, stdin);
 
  /*int gyro_readings[2];
  BT_read_gyro_sensor(PORT_2, gyro_readings);
@@ -157,6 +158,7 @@ int main(int argc, char *argv[])
  BT_all_stop(0);
  fgets(&reply[0], 1020, stdin);*/
 
+ BT_motor_port_start(MOTOR_B, 30);
  BT_timed_motor_port_start(MOTOR_B, -20, 0, 400, 0);
  //BT_timed_motor_port_start_v2(MOTOR_B, 20, 400);
  fgets(&reply[0], 1020, stdin);

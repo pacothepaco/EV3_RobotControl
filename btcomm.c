@@ -863,7 +863,7 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  // colour space such as HSV (if you want to do that, read up a bit on this - it's easily 
  // found).
  // 
- // Return values are in R[0, 255], G[0, 255] and B[0, 255].
+ // Return values are in R[0, 1023], G[0, 1023] and B[0, 1023].
  //
  // Ports are identified as PORT_1, PORT_2, etc
  //

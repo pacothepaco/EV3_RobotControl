@@ -17,15 +17,6 @@
  * 
  * ********************************************************************************************************************/
 #include "btcomm.h"
-#define RGB_Normalization_Constant  1020.0   // Constant used to normalize RGB values to a range of [0,255]
-					     // If you are having trouble with RGB values looking weird, 
-					     // get under the hood of the RGB sensor read function, print out
-					     // the returned RGB from the EV3 block (which will NOT be in
-					     // [0, 255], and see if the values being returned *for a variety
-					     // of colours under the lighting conditions you will be working on*
-					     // are either much smaller than this constant, or larger.
-					     // Adjust the constant so that you can reliably obtain values in
-					     // [0,255]. CAVEAT -> read values may be dependent on battery power!
 					     
 #define __BT_debug			// Uncomment to trigger printing of BT messages for debug purposes
 
@@ -345,7 +336,7 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
   
  cmd_string[9]=port_ids;
  cmd_string[10]=brake_mode;
- 
+
 #ifdef __BT_debug 
  fprintf(stderr,"BT_motor_port_stop command string:\n");
  for(int i=0; i<11; i++)
@@ -560,6 +551,8 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  // This function provides for smooth power control by allowing you to specify how long the motor will
  // take to spin up to full power, and how long it will take to wind down back to full stop.
  //
+ // Other operations can take place during this call, but the order of execution is not guaranteed.
+ //
  // Power must be in [-100, 100]
  //
  // Inputs: port identifier
@@ -571,7 +564,8 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- unsigned char cmd_string[22]={0x00,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0x00,  0x00,   0x00,     0x81,0x00, 0x00,0x00,0x00, 0x00,0x00,0x00,  0x00,0x00,0x00,     0x00};
+ char reply[1024];
+ unsigned char cmd_string[22]={0x00,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0x00,  0x00,   0x00,     0x81,0x00, 0x00,0x00,0x00, 0x00,0x00,0x00,  0x00,0x00,0x00,     0x00};
  //                          |length-2| | cnt_id | |type|   |header|    |cmd| |layer| |port ids|  |power|      |ramp up|      |run|           |ramp down|      |brake|
 
  if (power>100||power<-100)
@@ -618,6 +612,15 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
 
  write(*socket_id,&cmd_string[0],22);
 
+ if (reply[4]==0x02){
+  fprintf(stderr,"BT_motor_port_start command(): Command successful\n");
+  return(reply[5]!=0);
+ }
+ else{
+  fprintf(stderr,"BT_motor_port_start command(): Command failed\n");
+  return(-1);
+ }
+
  message_id_counter++;
 
  return(0);
@@ -627,7 +630,8 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
  // This is a quick call provided for convenience - it sets the motor to the specified power
- // for the specified amount of time without ramp-up or ramp-down.
+ // for the specified amount of time without ramp-up or ramp-down. This is a blocking call,
+ // other operations will resume after this function finishes running.
  //
  // Power must be in [-100, 100]
  //
@@ -660,7 +664,7 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
   return(-1);
  }
 
- //BT_motor_port_start(port_id, power);
+ BT_motor_port_start(port_id, power);
 
  // Set message count id
  p=(void *)&message_id_counter;
@@ -697,11 +701,11 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  read(*socket_id,&reply[0],1023);
 
  if (reply[4]==0x02){
-  fprintf(stderr,"BT_wait(): Command successful\n");
+  fprintf(stderr,"BT_motor_port_startv2(): Command successful\n");
   return(reply[5]!=0);
  }
  else{
-  fprintf(stderr,"BT_wait(): Command failed\n");
+  fprintf(stderr,"BT_motor_port_startv2(): Command failed\n");
   return(-1);
  }
 
@@ -921,26 +925,42 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  if (reply[4]==0x02){
   fprintf(stderr,"BT_colour_sensor_RGB(): Command successful\n");
 #ifdef __BT_debug
- fprintf(stderr,"BT_read_colour_sensor_RGB response string:\n");
- for(int i=0; i<17; i++)
- {
-  fprintf(stderr,"%X, ",reply[i]&0xff);
- }
- fprintf(stderr,"\n");
+   fprintf(stderr,"BT_read_colour_sensor_RGB response string:\n");
+   for(int i=0; i<17; i++)
+   {
+    fprintf(stderr,"%X, ",reply[i]&0xff);
+   }
+  fprintf(stderr,"\n");
 #endif
 
+  R|=(uint32_t)reply[8];
+  R<<=8;
+  R|=(uint32_t)reply[7];
+  R<<=8;
+  R|=(uint32_t)reply[6];
+  R<<=8;
   R|=(uint32_t)reply[5];
-  R|=(uint32_t)reply[6]<<8;
+
+  G|=(uint32_t)reply[12];
+  G<<=8;
+  G|=(uint32_t)reply[11];
+  G<<=8;
+  G|=(uint32_t)reply[10];
+  G<<=8;
   G|=(uint32_t)reply[9];
-  G|=(uint32_t)reply[10]<<8;
+
+  B|=(uint32_t)reply[16];
+  B<<=8;
+  B|=(uint32_t)reply[15];
+  B<<=8;
+  B|=(uint32_t)reply[14];
+  B<<=8;
   B|=(uint32_t)reply[13];
-  B|=(uint32_t)reply[14]<<8;
-  normalized=(double)R/RGB_Normalization_Constant*255.0;
-  RGB[0]=(int)normalized;
-  normalized=(double)G/RGB_Normalization_Constant*255.0;
-  RGB[1]=(int)normalized;
-  normalized=(double)B/RGB_Normalization_Constant*255.0;
-  RGB[2]=(int)normalized;
+
+
+  RGB[0]=R;
+  RGB[1]=G;
+  RGB[2]=B;
  }
  else{
   fprintf(stderr,"BT_colour_sensor_RGB(): Command failed\n");

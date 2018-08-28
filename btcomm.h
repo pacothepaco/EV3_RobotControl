@@ -65,6 +65,7 @@ extern int message_id_counter;		// <-- Global message id counter
 #define PORT_3 0x02
 #define PORT_4 0x03
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command string encoding://   Prefix format:  |0x00:0x00|   |0x00:0x00|   |0x00|   |0x00:0x00|   |.... payload ....|
 //                   				|length-2|    | cnt_id |    |type|   | header |    

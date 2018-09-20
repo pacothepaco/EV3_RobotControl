@@ -163,10 +163,11 @@ int BT_play_tone_sequence(const int tone_data[50][3])
  int dur;
  int vol;
  void *p;
+ char reply[1024];
  unsigned char *cmd_str_p;
  unsigned char *cp;
  unsigned char cmd_string[1024];
- unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
+ unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0x00};
  //                           |length-2|    | cnt_id |    |type|   | header |    
 
  memset(&cmd_string[0],0,1024);
@@ -229,7 +230,19 @@ int BT_play_tone_sequence(const int tone_data[50][3])
 
  write(*socket_id,&cmd_string[0],len+2);
 
- message_id_counter++; 
+ read(*socket_id,&reply[0],1023);
+
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_drive command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_drive command(): Command failed\n");
+  return(-1);
+ }
  return(0);
 }
 
@@ -261,7 +274,8 @@ int BT_motor_port_start(char port_ids, char power)
 
  void *p;
  unsigned char *cp;
- unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ char reply[1024];
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
  //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
@@ -296,8 +310,19 @@ int BT_motor_port_start(char port_ids, char power)
 #endif  
  
  write(*socket_id,&cmd_string[0],15);
+ read(*socket_id,&reply[0],1023);
 
- message_id_counter++; 
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_drive command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_drive command(): Command failed\n");
+  return(-1);
+ }
  return(0); 
 }
 
@@ -314,7 +339,8 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
  //////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
+ char reply[1024];
+ unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
  //                           |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
  
  if (port_ids>15)
@@ -347,8 +373,20 @@ int BT_motor_port_stop(char port_ids, int brake_mode)
 #endif  
  
  write(*socket_id,&cmd_string[0],11);
+ read(*socket_id,&reply[0],1023);
 
- message_id_counter++; 
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_drive command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_drive command(): Command failed\n");
+  return(-1);
+ }
+
  return(0);
 }
 
@@ -365,9 +403,10 @@ int BT_all_stop(int brake_mode){
 
  void *p;
  unsigned char *cp;
+ char reply[1024];
  char port_ids = MOTOR_A|MOTOR_B|MOTOR_C|MOTOR_D;
- unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
- //                  |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
+ unsigned char cmd_string[11]={0x09,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA3,   0x00,    0x00,       0x00};
+ //                           |length-2| | cnt_id | |type| | header |  |stop|   |layer|  |port ids|  |brake|
 
  // Set message count id
  p=(void *)&message_id_counter;
@@ -388,10 +427,20 @@ int BT_all_stop(int brake_mode){
 #endif
 
  write(*socket_id,&cmd_string[0],11);
-
+ read(*socket_id,&reply[0],1023);
  message_id_counter++;
- return(0);
 
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_drive command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_drive command(): Command failed\n");
+  return(-1);
+ }
+
+ return(0);
 }
 
 int BT_drive(char lport, char rport, char power){
@@ -423,7 +472,8 @@ int BT_drive(char lport, char rport, char power){
  void *p;
  unsigned char *cp;
  char ports;
- unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ char reply[1024];
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
  //                           |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
@@ -460,8 +510,20 @@ int BT_drive(char lport, char rport, char power){
 #endif  
 
  write(*socket_id,&cmd_string[0],15);
+ read(*socket_id,&reply[0],1023);
 
- message_id_counter++; 
+ message_id_counter++;
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_drive command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_drive command(): Command failed\n");
+  return(-1);
+ }
+
  return(0);
 
 }
@@ -479,7 +541,7 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  //	    BT_turn(MOTOR_A, 100, MOTOR_B, 90);      <-- Turn toward the left gently
  //	    BT_turn(MOTOR_A, 100, MOTOR_B, 50);      <-- Turn toward the left more sharply
  //	    BT_turn(MOTOR_A, 100, MOTOR_B, 0);       <-- Turn toward the left at the highest possible rate
- //         BT_turn(MOTOR_A, -50, MOTOR_B, -100);    <-- Turn toward the right while driving backward
+ //     BT_turn(MOTOR_A, -50, MOTOR_B, -100);    <-- Turn toward the right while driving backward
  //	    BT_turn(MOTOR_A, 100, MOTOR_B, -100);    <-- Spin counter-clockwise at full speed
  //	    BT_turn(MOTOR_A, -50, MOTOR_B, 50);      <-- Spin clockwise at half speed
  //
@@ -493,7 +555,8 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  unsigned char *cp;
- unsigned char cmd_string[20]={0x12,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,      0x81,0x00,    0xA4,     0x00,     0x00, 0x81,0x00,  0xA6,    0x00,   0x00};
+ char reply[1024];
+ unsigned char cmd_string[20]={0x12,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA4,      0x00,    0x00,      0x81,0x00,    0xA4,     0x00,     0x00, 0x81,0x00,  0xA6,    0x00,   0x00};
  //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |lport id|  |power|  |set power| |layer| |rport id| |power|     |start|  |layer| |port ids|
 
  if (lpower>100||lpower<-100||rpower>100||lpower<-100)
@@ -534,8 +597,19 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
 #endif
 
  write(*socket_id,&cmd_string[0],20);
+ read(*socket_id,&reply[0],1023);
 
  message_id_counter++;
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_turn command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_turn command(): Command failed\n");
+  return(-1);
+ }
 
  return(0);
 
@@ -550,6 +624,8 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  //
  // This function provides for smooth power control by allowing you to specify how long the motor will
  // take to spin up to full power, and how long it will take to wind down back to full stop.
+ //
+ // Other operations can take place during this call, but the order of execution is not guaranteed.
  //
  // Power must be in [-100, 100]
  //
@@ -609,6 +685,17 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
 #endif
 
  write(*socket_id,&cmd_string[0],22);
+ read(*socket_id,&reply[0],1023);
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+  fprintf(stderr,"BT_motor_port_start command(): Command successful\n");
+#endif
+ }
+ else{
+  fprintf(stderr,"BT_motor_port_start command(): Command failed\n");
+  return(-1);
+ }
 
  if (reply[4]==0x02){
   fprintf(stderr,"BT_motor_port_start command(): Command successful\n");
@@ -699,8 +786,9 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  read(*socket_id,&reply[0],1023);
 
  if (reply[4]==0x02){
+#ifdef __BT_debug
   fprintf(stderr,"BT_motor_port_startv2(): Command successful\n");
-  return(reply[5]!=0);
+#endif
  }
  else{
   fprintf(stderr,"BT_motor_port_startv2(): Command failed\n");
@@ -918,7 +1006,9 @@ int BT_read_touch_sensor(char sensor_port){
  message_id_counter++;
 
  if (reply[4]==0x02){
+#ifdef __BT_debug
   fprintf(stderr,"BT_touch_sensor(): Command successful\n");
+#endif
   return(reply[5]!=0);
  }
  else{
@@ -994,7 +1084,9 @@ int BT_read_colour_sensor(char sensor_port){
  message_id_counter++;
 
  if (reply[4]==0x02){
+#ifdef __BT_debug
   fprintf(stderr,"BT_colour_sensor(): Command successful\n");
+#endif
  }
  else{
   fprintf(stderr,"BT_colour_sensor(): Command failed\n");
@@ -1014,7 +1106,6 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
  // between what the sensor read and the reference, or you can get fancier and use a different
  // colour space such as HSV (if you want to do that, read up a bit on this - it's easily 
  // found).
- // 
  // Return values are in R[0, 1020], G[0, 1020] and B[0, 1020].
  //
  // Ports are identified as PORT_1, PORT_2, etc
@@ -1074,16 +1165,16 @@ int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]){
 
  message_id_counter++;
 
-if (reply[4]==0x02){
+ if (reply[4]==0x02){
+#ifdef __BT_debug
   fprintf(stderr,"BT_colour_sensor_RGB(): Command successful\n");
-  #ifdef __BT_debug
-   fprintf(stderr,"BT_read_colour_sensor_RGB response string:\n");
-   for(int i=0; i<17; i++)
-   {
-    fprintf(stderr,"%X, ",reply[i]&0xff);
-   }
+  fprintf(stderr,"BT_read_colour_sensor_RGB response string:\n");
+  for(int i=0; i<17; i++)
+  {
+   fprintf(stderr,"%X, ",reply[i]&0xff);
+  }
   fprintf(stderr,"\n");
-  #endif
+#endif
 
   R|=(uint32_t)reply[8];
   R<<=8;
@@ -1176,9 +1267,12 @@ int BT_read_ultrasonic_sensor(char sensor_port){
  read(*socket_id,&reply[0],1023);
 
  message_id_counter++;
-if (reply[4]==0x02){
-  fprintf(stderr,"BT_ultrasonic_sensor(): Command successful\n");
-}
+
+ if (reply[4]==0x02){
+#ifdef __BT_debug
+   fprintf(stderr,"BT_ultrasonic_sensor(): Command successful\n");
+#endif
+ }
  else{
   fprintf(stderr,"BT_ultrasonic_sensor: Command failed\n");
   return(-1);
@@ -1240,7 +1334,9 @@ int BT_clear_gyro_sensor(char sensor_port){
  message_id_counter++;
 
  if (reply[4]==0x02){
+#ifdef __BT_debug
   fprintf(stderr,"BT_clear_gyro_sensor(): Command successful\n");
+#endif
  }
  else{
   fprintf(stderr,"BT_clear_gyro_sensor: Command failed\n");

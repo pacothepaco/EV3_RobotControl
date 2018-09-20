@@ -35,11 +35,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <getopt.h>
 #include <errno.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+
 
 // Bluetooth libraries - make sure they are installed in your machine
 #include <bluetooth/bluetooth.h>
@@ -48,8 +50,8 @@
 #include <bluetooth/rfcomm.h>
 
 #include "bytecodes.h"			// <-- This is provided by Lego, from the EV3 development kit,
-					//     and is distributed under GPL. Please see the license
-					//     file included with this distribution for details.
+#include "c_com.h"  			//     and is distributed under GPL. Please see the license
+					           //     file included with this distribution for details.
 
 extern int message_id_counter;		// <-- Global message id counter
 
@@ -65,6 +67,10 @@ extern int message_id_counter;		// <-- Global message id counter
 #define PORT_3 0x02
 #define PORT_4 0x03
 
+#define EV3_COLOUR 29
+#define EV3_INFRARED 33
+#define EV3_GYRO 32
+#define PARTITION_SIZE 1017
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command string encoding://   Prefix format:  |0x00:0x00|   |0x00:0x00|   |0x00|   |0x00:0x00|   |.... payload ....|
@@ -132,11 +138,31 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time);
 // If no sensor is plugged into the sensor_port the readings will be 0 for that sensor. If the wrong sensor is
 // plugged into the port then there will be values returned, but they will not correspond to the actual state of 
 // the sensor.
+void BT_sensor_get_format(char sensor_port);
+void BT_sensor_set_type_mode(char sensor_port, char type, char mode);
+void BT_get_type_mode(char sensor_port);
+int BT_is_busy(char sensor_port);
 int BT_read_touch_sensor(char sensor_port);				
 int BT_read_colour_sensor(char sensor_port);				// Indexed colour read function
 int BT_read_colour_sensor_RGB(char sensor_port, int RGB[3]); 		// Returns RGB instead of indexed colour
 int BT_read_ultrasonic_sensor(char sensor_port);
-int BT_clear_gyro_sensor(char sensor_port);				// Reset gyro sensor to 0 degrees
-int BT_read_gyro_sensor(char sensor_port, int angle_speed[2]);		
+int BT_clear_sensor(char sensor_port);				// Reset sensor to 0
+int BT_read_gyro_sensor(char sensor_port);
+void BT_get_type_mode(char sensor_port);
+void BT_sensor_set_mode(char sensor_port, char mode);
+int BT_check_if_busy(char sensor_port);
+int BT_play_sound_file(const char *path, int volume);
 
+// System command section
+// Used for uploading files to the EV3 such as image and sound files in proper format. EV3 accepts .rgf image files and
+// .rsf sound files.
+int BT_list_files(char *path, char **contents);
+int BT_upload_file(const char *path_dest, const char *path_src);
+
+// UI commands section
+// Used to interact with the display and LED lights around the buttons.
+int BT_set_LED_colour(int colour);
+int BT_draw_image_from_file(int colour, int x_0, int y_0, const char *file_path);
+int BT_restore_previous_display(int no);
+int BT_store_current_display(int no);
 #endif

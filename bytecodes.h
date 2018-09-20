@@ -1611,8 +1611,9 @@ DEVCMD;
 
 #define   LAB1(v)                       (PRIMPAR_LONG | PRIMPAR_LABEL),(v & 0xFF)
 
+
 #define   LC0(v)                        ((v & PRIMPAR_VALUE) | PRIMPAR_SHORT | PRIMPAR_CONST)
-#define   LC1(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE),(v & 0xFF)
+#define   LC1_byte0()                   (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE)
 #define   LC2(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES),(v & 0xFF),((v >> 8) & 0xFF)
 #define   LC2_byte0()                   (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES)
 #define   LX_byte1(v)                   (v & 0xFF)

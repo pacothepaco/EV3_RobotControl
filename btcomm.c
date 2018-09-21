@@ -1365,8 +1365,9 @@ int BT_read_gyro_sensor(char sensor_port){
  char reply[1024];
  memset(&reply[0],0,1024);
  unsigned char *cp;
+ int angle=0;
 
- unsigned char cmd_string[15]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,   0x00,  0x00,  0x00,  0x00,   0x00,       0x00};
+ unsigned char cmd_string[15]={0x00,0x00, 0x00,0x00, 0x00,  0x04,0x00,  0x00,    0x00,   0x00,  0x00,  0x00,  0x00,   0x00,       0x00};
  //                          |length-2| | cnt_id | |type| | header |   |cmd|   |layer|  |port| |type| |mode| |format| |# vals| |global var addr|
 
 
@@ -1409,12 +1410,19 @@ int BT_read_gyro_sensor(char sensor_port){
 #ifdef __BT_debug
   fprintf(stderr,"BT_read_gyro_sensor(): Command successful\n");
   fprintf(stderr,"BT_read_gyro_sensor response string:\n");
-  fprintf(stderr, "angle: %d\n", reply[5]);
-  for(int i=0; i<6; i++)
+  for(int i=0; i<9; i++)
   {
    fprintf(stderr,"%X, ",reply[i]&0xff);
   }
   fprintf(stderr,"\n");
+  angle |= (int32_t)reply[8];
+  angle <<= 8;
+  angle |= (int32_t)reply[7];
+  angle <<= 8;
+  angle |= (int32_t)reply[6];
+  angle <<= 8;
+  angle |= (int32_t)reply[5];
+  fprintf(stderr, "angle: %d\n", angle);
 #endif
  }
  else{
@@ -1422,7 +1430,7 @@ int BT_read_gyro_sensor(char sensor_port){
   return(-1);
  }
 
- return (reply[5]);
+ return (angle);
 }
 
 

@@ -60,6 +60,7 @@ int BT_open(const char *device_id)
  return 0;
 }
 
+
 int BT_close()
 {
  /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +70,7 @@ int BT_close()
  close(*socket_id);
  free(socket_id);
 }
+
 
 int BT_setEV3name(const char *name)
 {
@@ -137,6 +139,7 @@ int BT_setEV3name(const char *name)
  message_id_counter++;
 }
 
+
 int BT_play_tone_sequence(const int tone_data[50][3])
 {
  //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +170,7 @@ int BT_play_tone_sequence(const int tone_data[50][3])
  unsigned char *cmd_str_p;
  unsigned char *cp;
  unsigned char cmd_string[1024];
- unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x00,    0x00,0x00,    0x00};
+ unsigned char cmd_prefix[8]={0x00,0x00,    0x00,0x00,    0x80,    0x00,0x00,    0x00};
  //                           |length-2|    | cnt_id |    |type|   | header |    
 
  memset(&cmd_string[0],0,1024);
@@ -234,17 +237,9 @@ int BT_play_tone_sequence(const int tone_data[50][3])
 
  message_id_counter++;
 
- if (reply[4]==0x02){
-#ifdef __BT_debug
-  fprintf(stderr,"BT_drive command(): Command successful\n");
-#endif
- }
- else{
-  fprintf(stderr,"BT_drive command(): Command failed\n");
-  return(-1);
- }
  return(0);
 }
+
 
 int BT_motor_port_start(char port_ids, char power)
 {
@@ -275,7 +270,7 @@ int BT_motor_port_start(char port_ids, char power)
  void *p;
  unsigned char *cp;
  char reply[1024];
- unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
  //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)
@@ -325,6 +320,7 @@ int BT_motor_port_start(char port_ids, char power)
  }
  return(0); 
 }
+
 
 int BT_motor_port_stop(char port_ids, int brake_mode)
 {
@@ -443,6 +439,7 @@ int BT_all_stop(int brake_mode){
  return(0);
 }
 
+
 int BT_drive(char lport, char rport, char power){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  // This function sends a command to the left and right motor ports to set the motor power to
@@ -525,8 +522,8 @@ int BT_drive(char lport, char rport, char power){
  }
 
  return(0);
-
 }
+
 
 int BT_turn(char lport, char lpower, char rport, char rpower){
  ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -612,8 +609,8 @@ int BT_turn(char lport, char lpower, char rport, char rpower){
  }
 
  return(0);
-
 }
+
 
 int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int run_time, int ramp_down_time){
  ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -711,6 +708,7 @@ int BT_timed_motor_port_start(char port_id, char power, int ramp_up_time, int ru
  return(0);
 }
 
+
 int BT_timed_motor_port_start_v2(char port_id, char power, int time){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //
@@ -799,66 +797,19 @@ int BT_timed_motor_port_start_v2(char port_id, char power, int time){
 
  return(0);
 }
-int BT_is_busy(char sensor_port){
- void *p;
- char reply[1024];
- memset(reply,0,1024);
- unsigned char *cp;
-
- unsigned char cmd_string[11]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,  0x00,   0x00, 0x00};
- //                          |length-2| | cnt_id | |type| | header |   |cmd|  |layer| |port| |global var addr|
 
 
- if (sensor_port>8)
- {
-  fprintf(stderr,"BT_is_busy: Invalid port id value\n");
-  return(-1);
- }
-
- cmd_string[0]=LC0(9);
- // Set message count id
- p=(void *)&message_id_counter;
- cp=(unsigned char *)p;
- cmd_string[2]=*cp;
- cmd_string[3]=*(cp+1);
-
- cmd_string[7]=opINPUT_TEST;
- cmd_string[9]=sensor_port;
- cmd_string[10]=GV0(0x00); //global var
-
-#ifdef __BT_debug
- fprintf(stderr,"BT_is_busy command string\n");
- for(int i=0; i<10; i++)
- {
-  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
-
- write(*socket_id,&cmd_string[0],10);
- read(*socket_id,&reply[0],1023);
-
- message_id_counter++;
-
- if (reply[4]==0x02){
-#ifdef __BT_debug
-  fprintf(stderr,"BT_is_busy(): Command successful\n");
-  fprintf(stderr,"BT_is_busy response string:\n");
-  for(int i=0; i<6; i++)
-  {
-    fprintf(stderr,"%X, ",reply[i]&0xff);
-  }
-  fprintf(stderr,"\n");
-#endif
- }
- else{
-  fprintf(stderr,"BT_is_busy: Command failed\n");
-  return(-1);
- }
-
- return (reply[5]);
-}
 void BT_get_type_mode(char sensor_port){
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //
+ // Displays on stderr the type and mode of sensor plugged into the specified sensor port. 
+ // Can be useful for debugging sensor issues. Certain sensors switch to the wrong type or become 
+ // unusable after changing modes (for example gyro sensor).
+ //
+ // Inputs: port identifier
+ //
+ //
+ //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
  char reply[1024];
  memset(reply,0,1024);
@@ -899,61 +850,12 @@ void BT_get_type_mode(char sensor_port){
  }
  fprintf(stderr,"\n");
 
-
  printf("type: %d, mode: %d\n", reply[5], reply[6]);
 
  message_id_counter++;
-
 }
-void BT_sensor_set_mode(char sensor_port, char mode){
- void *p;
- char reply[1024];
- memset(reply,0,1024);
- unsigned char *cp;
- unsigned char cmd_string[13]={0x0B,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,   0x00,    0x00,   0x00,   0x00, 0x00};
- //                          |length-2| | cnt_id |   |type| | header |  |cmd|  |layer|  |port| | type | |mode| |global var addr|
-
- if (sensor_port>8)
- {
-  fprintf(stderr,"BT_sensor_set_mode: Invalid port id value\n");
- }
-
- // Set message count id
- p=(void *)&message_id_counter;
- cp=(unsigned char *)p;
- cmd_string[2]=*cp;
- cmd_string[3]=*(cp+1);
- cmd_string[7]=opINPUT_READ;
- cmd_string[9]=sensor_port;
- cmd_string[10]=LC0(EV3_COLOUR);
- cmd_string[11]=LC0(mode);
- cmd_string[12]=GV0(0x00); //global var
-
-#ifdef __BT_debug
- fprintf(stderr,"BT_sensor_set_mode command string:\n");
- for(int i=0; i<13; i++)
- {
-  fprintf(stderr,"%X, ",cmd_string[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
-
- write(*socket_id,&cmd_string[0],13);
- read(*socket_id,&reply[0],1023);
-
-#ifdef __BT_debug
- fprintf(stderr,"BT_sensor_set_mode response string:\n");
- for(int i=0; i<5; i++)
- {
-  fprintf(stderr,"%X, ",reply[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
-
- message_id_counter++;
 
 
-}
 int BT_read_touch_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
  // Reads the value from the touch sensor.
@@ -1016,6 +918,7 @@ int BT_read_touch_sensor(char sensor_port){
   return(-1);
  }
 }
+
 
 int BT_read_colour_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1280,71 +1183,6 @@ int BT_read_ultrasonic_sensor(char sensor_port){
  return (reply[5]);
 }
 
-int BT_clear_gyro_sensor(char sensor_port){
- ////////////////////////////////////////////////////////////////////////////////////////////////
- //
- // Clears the sensor data of the gyro sensor - this should reset the sensor to 0 degrees.
- // Note that the sensor is initialized when you first power up the kit, so whatever orientation
- // the bot has at that point, becomes 0 degrees. This function allows you to reset the sensor
- // during operation. This will be needed to set specific reference directions to zero, and to
- // handle sensor drift.
- //
- // Ports are identified as PORT_1, PORT_2, etc
- // 
- // Inputs: port identifier of gyro sensor port
- //
- // Returns: 0 on success
- //          -1 if EV3 returned an error response
- //////////////////////////////////////////////////////////////////////////////////////////////////
- unsigned char clr_string[10]={0x00,0x00, 0x00,0x00, 0x00,  0x01,0x00,  0x00,    0x00,       0x00};
- //                          |length-2| | cnt_id | |type| | header |   |cmd|  |sensor cmd | |layer|
-
- void *p;
- unsigned char *cp;
- char reply[1024];
- memset(&reply[0],0,1024);
-
- if (sensor_port>8)
- {
-  fprintf(stderr,"BT_clear_gyro_sensor: Invalid port id value\n");
-  return(-1);
- }
-
- p=(void *)&message_id_counter;
- cp=(unsigned char *)p;
- clr_string[0]=LC0(8);
- clr_string[2]=*cp;
- clr_string[3]=*(cp+1);
- clr_string[7]=opINPUT_DEVICE;
- clr_string[8]=LC0(CLR_ALL);
- clr_string[10]=sensor_port;
-
-#ifdef __BT_debug
- fprintf(stderr,"BT_clear_gyro_sensor command string\n");
- for(int i=0; i<11; i++)
- {
-  fprintf(stderr,"%X, ",clr_string[i]&0xff);
- }
- fprintf(stderr,"\n");
-#endif
-
- write(*socket_id,&clr_string[0],10);
- read(*socket_id,&reply[0],1023);
-
- message_id_counter++;
-
- if (reply[4]==0x02){
-#ifdef __BT_debug
-  fprintf(stderr,"BT_clear_gyro_sensor(): Command successful\n");
-#endif
- }
- else{
-  fprintf(stderr,"BT_clear_gyro_sensor: Command failed\n");
-  return(-1);
- }
- return (0);
-}
-
 
 int BT_read_gyro_sensor(char sensor_port){
  ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1453,12 +1291,8 @@ int BT_play_sound_file(const char *path, int volume){
  int msg_length=0;
  int path_len=0;
  path_len=strnlen(path, 1011);
- unsigned char *cmd_string;
- cmd_string=(unsigned char *)calloc(12 + path_len + 1, sizeof(char));
- if (cmd_string == NULL){
-   perror("calloc");
-   return (-1);
- }
+ unsigned char cmd_string[1024];
+ memset(cmd_string, 0, 1024);
 
  cmd_string[0]=LX_byte1(12+path_len+1-2); //length-2
  cmd_string[1]=LX_byte2(12+path_len+1-2); //length-2
@@ -1479,7 +1313,6 @@ int BT_play_sound_file(const char *path, int volume){
  for (int i=0; i<path_len; i++){
    cmd_string[i+12]=path[i];
  }
- cmd_string[12+path_len]='\0';
 
 #ifdef __BT_debug
  fprintf(stderr,"BT_play_sound_file command string\n");
@@ -1492,7 +1325,6 @@ int BT_play_sound_file(const char *path, int volume){
 
  write(*socket_id,&cmd_string[0],12+path_len+1);
  read(*socket_id,&reply[0],1023);
-
  message_id_counter++;
 
  if (reply[4]==0x02){
@@ -1505,18 +1337,16 @@ int BT_play_sound_file(const char *path, int volume){
  }
  fprintf(stderr,"\n");
 #endif
-
  }
  else{
   fprintf(stderr,"BT_play_sound_file: Command failed\n");
- for(int i=0; i<16; i++)
- {
-  fprintf(stderr,"%X, ",reply[i]&0xff);
- }
- fprintf(stderr,"\n");
+  for(int i=0; i<16; i++)
+  {
+   fprintf(stderr,"%X, ",reply[i]&0xff);
+  }
+  fprintf(stderr,"\n");
   return(-1);
  }
-
  return (0);
 }
 
@@ -1541,15 +1371,11 @@ int BT_list_files(char *path, char **msg_reply){
  char reply[1024];
  memset(reply,0,1024);
  unsigned char *cp;
- int msg_length=0;
+ unsigned int msg_length=0;
  int path_len=0;
  path_len=strnlen(path, 1011);
- unsigned char *cmd_string;
- cmd_string=(unsigned char *)calloc(8+path_len+1, sizeof(char));
- if (cmd_string == NULL){
-   perror("calloc");
-   return (-1);
- }
+ unsigned char cmd_string[1024];
+ memset(cmd_string,0,1024);
 
  cmd_string[0]=LX_byte1(8+path_len-2+1); //length-2
  cmd_string[1]=LX_byte2(8+path_len-2+1); //length-2
@@ -1581,12 +1407,11 @@ int BT_list_files(char *path, char **msg_reply){
  read(*socket_id,&reply,1023);
 
  message_id_counter++;
- free(cmd_string);
 
  if (reply[4]==SYSTEM_REPLY){
-  msg_length = reply[1];
+  msg_length |= (unsigned char)reply[1];
   msg_length<<=8;
-  msg_length |= reply[0];
+  msg_length |= (unsigned char)reply[0];
   msg_length += 2;
 #ifdef __BT_debug
   fprintf(stderr,"BT_list_files(): Command successful\n");
@@ -1649,10 +1474,11 @@ int BT_upload_file(char const *dest, char const *src){
  const char *p3="/home/root/lms2012/tools";
 
  int path_len=0;
- int msg_length=0;
+ unsigned int msg_length=0;
  int handle;
 
- unsigned char *cmd_string;
+ unsigned char cmd_string[1024];
+ memset(&cmd_string[0],0,1024);
  struct stat st;
 
  if ((dest[0] == '/') && (strncmp(p1, dest, strlen(p1)) != 0) && (strncmp(p2, dest, strlen(p2)) != 0) && (strncmp(p3, dest, strlen(p3)) != 0)){
@@ -1661,11 +1487,6 @@ int BT_upload_file(char const *dest, char const *src){
  }
 
  path_len=strnlen(dest, 1011);
- cmd_string=(unsigned char *)calloc(10 + path_len + 1, sizeof(char));
- if (cmd_string == NULL){
-   perror("calloc");
-   return (-1);
- }
 
  stat(src, &st);
  size=st.st_size;
@@ -1702,12 +1523,11 @@ int BT_upload_file(char const *dest, char const *src){
  read(*socket_id,&reply[0],1023);
 
  message_id_counter++;
- free(cmd_string);
 
  if (reply[4]==SYSTEM_REPLY){
-  msg_length = reply[1];
+  msg_length = (unsigned char)reply[1];
   msg_length<<=8;
-  msg_length |= reply[0];
+  msg_length |= (unsigned char)reply[0];
   msg_length += 2;
 #ifdef __BT_debug
   fprintf(stderr,"BT_upload_file response string:\n");
@@ -1738,11 +1558,7 @@ int BT_upload_file(char const *dest, char const *src){
 
  remainder = size > PARTITION_SIZE ? PARTITION_SIZE : size;
  while (remainder > 0){
-   cmd_string=(unsigned char *)calloc(7 + remainder, sizeof(char));
-   if (cmd_string == NULL){
-    perror("calloc");
-    return (-1);
-   }
+   memset(&cmd_string[0],0,1024);
 
    n = fread(buffer, 1, remainder, fp);
    cmd_string[0]=LX_byte1(7+remainder-2); //length-2
@@ -1775,9 +1591,9 @@ int BT_upload_file(char const *dest, char const *src){
    message_id_counter++;
 
    if (reply[4]==SYSTEM_REPLY){
-    msg_length = reply[1];
+    msg_length = (unsigned char)reply[1];
     msg_length<<=8;
-    msg_length |= reply[0];
+    msg_length |= (unsigned char)reply[0];
     msg_length += 2;
 #ifdef __BT_debug
     fprintf(stderr,"BT_upload_file response string:\n");
@@ -1808,7 +1624,6 @@ int BT_upload_file(char const *dest, char const *src){
 #endif
     return(reply[4]);
    }
-   free(cmd_string);
    size-=n;
    remainder = size > PARTITION_SIZE ? PARTITION_SIZE : size;
  }
@@ -1913,12 +1728,8 @@ int BT_draw_image_from_file(int colour, int x_0, int y_0, const char *file_path)
  int msg_length=0;
  int path_len=0;
  path_len=strnlen(file_path, 1004);
- unsigned char *cmd_string;
- cmd_string=(unsigned char *)calloc(20+path_len+1, sizeof(char));
- if (cmd_string == NULL){
-   perror("calloc");
-   return (-1);
- }
+ unsigned char cmd_string[1024];
+ memset(&cmd_string[0],0,1024);
 
  if (x_0 < 0 || x_0 > 177){
     fprintf(stderr,"BT_draw_image_file: Invalid x_0 coordinate\n");

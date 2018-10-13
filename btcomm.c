@@ -18,7 +18,7 @@
  * ********************************************************************************************************************/
 #include "btcomm.h"
 					     
-#define __BT_debug			// Uncomment to trigger printing of BT messages for debug purposes
+//#define __BT_debug			// Uncomment to trigger printing of BT messages for debug purposes
 
 int message_id_counter=1;		// <-- This is a global message_id counter, used to keep track of
 					//     messages sent to the EV3
@@ -270,7 +270,7 @@ int BT_motor_port_start(char port_ids, char power)
  void *p;
  unsigned char *cp;
  char reply[1024];
- unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x80,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
+ unsigned char cmd_string[15]={0x0D,0x00, 0x00,0x00, 0x00,  0x00,0x00,  0xA4,      0x00,    0x00,       0x81,0x00,   0xA6,    0x00,   0x00};
  //                          |length-2| | cnt_id | |type| | header |  |set power| |layer|  |port ids|  |power|      |start|  |layer| |port id|
 
  if (power>100||power<-100)

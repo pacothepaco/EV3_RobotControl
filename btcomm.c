@@ -1200,7 +1200,7 @@ int BT_read_gyro_sensor(char sensor_port){
  //          -1 if EV3 returned an error response
  //////////////////////////////////////////////////////////////////////////////////////////////////
  void *p;
- char reply[1024];
+ unsigned char reply[1024];
  memset(&reply[0],0,1024);
  unsigned char *cp;
  int angle=0;
@@ -1253,13 +1253,13 @@ int BT_read_gyro_sensor(char sensor_port){
    fprintf(stderr,"%X, ",reply[i]&0xff);
   }
   fprintf(stderr,"\n");
-  angle |= (int32_t)reply[8];
+  angle |= reply[8];
   angle <<= 8;
-  angle |= (int32_t)reply[7];
+  angle |= reply[7];
   angle <<= 8;
-  angle |= (int32_t)reply[6];
+  angle |= reply[6];
   angle <<= 8;
-  angle |= (int32_t)reply[5];
+  angle |= reply[5];
   fprintf(stderr, "angle: %d\n", angle);
 #endif
  }

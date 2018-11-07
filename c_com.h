@@ -1016,7 +1016,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   ListSizeLsb;
   UBYTE   ListSizeNsb1;
   UBYTE   ListSizeNsb2;
@@ -1045,7 +1045,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   Handle;
   UBYTE   PayLoad[];
 }RPLY_CONTINUE_LIST;
@@ -1069,7 +1069,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   FileSizeLsb;
   UBYTE   FileSizeNsb1;
   UBYTE   FileSizeNsb2;
@@ -1097,7 +1097,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   FileSizeLsb;
   UBYTE   FileSizeNsb1;
   UBYTE   FileSizeNsb2;
@@ -1125,7 +1125,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   FileSizeLsb;
   UBYTE   FileSizeNsb1;
   UBYTE   FileSizeNsb2;
@@ -1153,7 +1153,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   Handle;
   UBYTE   PayLoad[];
 }RPLY_CONTINUE_READ;
@@ -1174,7 +1174,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   PayLoad[];
 }RPLY_LIST_HANDLES;
 #define   SIZEOF_RPLYLISTHANDLES        7
@@ -1195,7 +1195,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
 }RPLY_REMOVE_FILE;
 #define   SIZEOF_RPLYREMOVEFILE         7
 
@@ -1215,7 +1215,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
 }RPLY_MAKE_DIR;
 #define   SIZEOF_RPLYMAKEDIR            7
 
@@ -1235,7 +1235,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   Handle;
 }RPLY_CLOSE_HANDLE;
 #define   SIZEOF_RPLYCLOSEHANDLE        8
@@ -1261,7 +1261,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   Handle;
 }RPLY_BEGIN_DL;
 #define   SIZEOF_RPLYBEGINDL            8
@@ -1283,7 +1283,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   Handle;
 }RPLY_CONTINUE_DL;
 #define   SIZEOF_RPLYCONTINUEDL         8
@@ -1326,7 +1326,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   MacSize;
   UBYTE   Mac[13];
   UBYTE   PinSize;
@@ -1350,7 +1350,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
 }RPLY_BUNDLE_ID;
 #define   SIZEOF_RPLYBUNDLEID           7
 
@@ -1370,7 +1370,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   Status;
+  UBYTE   RetStatus;
 }RPLY_BUNDLE_SEED_ID;
 #define   SIZEOF_RPLYBUNDLESEEDID       7
 
@@ -1511,7 +1511,7 @@ typedef   struct
 typedef   struct
 {
   UBYTE   Name[50];
-  UBYTE   Status;
+  UBYTE   RetStatus;
   UBYTE   FifoSize;
   UBYTE   Type;
   UWORD   DataSize;
